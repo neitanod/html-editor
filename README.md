@@ -49,6 +49,7 @@ html-editor [OPTIONS] [FILE]
 | `html-editor about.html` | edits that file |
 | `html-editor docs/guide.html` | edits a file in another folder |
 | `html-editor recipes` | edits `recipes/index.html` |
+| `html-editor received.mhtml` | unpacks the archive into `received/` and edits it |
 
 **A name with an extension is a file; a name without one is a folder**, and its
 `index.html` is what gets edited. That is the shorthand for keeping a document
@@ -71,6 +72,7 @@ leaves no trace. An unsaved `index.html` takes its title from the folder name.
 | `--read-only` | Every write endpoint is disabled |
 | `--no-browser` | Start normally but do not open the browser |
 | `--dev <dir>` | Serve the UI from a source folder instead of the embedded copy |
+| `--export-mhtml` | Pack the document into an `.mhtml` file and exit |
 | `--version` | Print version information |
 
 ## What it does
@@ -97,6 +99,22 @@ It covers `src`, `srcset`, `poster` and the `url()` of inline styles, and the
 same command is available for the whole document from the background
 context menu (*Download external resources*). A resource that cannot be
 downloaded keeps its original address instead of breaking the rest.
+
+**One file to send: `.mhtml`.** A folder is the right shape to work in and the
+wrong shape to mail. *Export to .mhtml* packs the document with its images and
+stylesheets into a single file — the "web page, single file" of Chrome, Edge and
+Word — and *Import an .mhtml* unpacks one back into the folder, so what you
+received is editable with everything else here. It is a mail message (RFC 2557),
+not a zip: plain text you can read with a pager, with the binaries in base64.
+Addresses that point at other sites stay remote, and nothing in the archive
+reveals where the folder lives on your disk.
+
+From the shell it works without opening the editor:
+
+```
+html-editor --export-mhtml recipes   # writes recipes/index.mhtml
+html-editor received.mhtml           # unpacks it into ./received/ and opens it
+```
 
 **Links you can actually edit.** Click a link and a panel appears above or below
 it — whichever fits — with the readable text, the address, a "new tab" toggle, a

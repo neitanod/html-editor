@@ -52,6 +52,7 @@ html-editor [OPCIONES] [ARCHIVO]
 | `html-editor about.html` | edita ese archivo |
 | `html-editor docs/guia.html` | edita un archivo en otra carpeta |
 | `html-editor recetas` | edita `recetas/index.html` |
+| `html-editor recibido.mhtml` | desempaqueta el archivo en `recibido/` y lo edita |
 
 **Un nombre con extensión es un archivo; uno sin extensión es una carpeta**, y
 lo que se edita es su `index.html`. Ese es el atajo para mantener cada documento
@@ -75,6 +76,7 @@ carpeta.
 | `--read-only` | Deshabilita todos los endpoints de escritura |
 | `--no-browser` | Arranca normal pero sin abrir el navegador |
 | `--dev <dir>` | Sirve la UI desde una carpeta de código en vez de la copia embebida |
+| `--export-mhtml` | Empaqueta el documento en un `.mhtml` y termina |
 | `--version` | Muestra la versión |
 
 ## Qué hace
@@ -104,6 +106,23 @@ controlás. Cubre `src`, `srcset`, `poster` y las `url()` de los estilos inline,
 y el mismo comando está disponible para todo el documento desde el menú
 contextual del fondo (*Descargar los recursos externos*). Un recurso que no se
 puede bajar conserva su dirección original en vez de romper el resto.
+
+**Un solo archivo para mandar: `.mhtml`.** Una carpeta es la forma correcta para
+trabajar y la incorrecta para mandar por mail. *Exportar a .mhtml* empaqueta el
+documento con sus imágenes y sus hojas de estilo en un archivo único —la "página
+web de un solo archivo" de Chrome, Edge y Word— e *Importar un .mhtml* lo
+desempaqueta de vuelta en la carpeta, así lo que te mandaron queda editable con
+todo lo demás que hay acá. Es un mail (RFC 2557) y no un zip: texto plano que
+podés leer con un pager, con los binarios en base64. Las direcciones que apuntan
+a otros sitios siguen siendo remotas, y nada del archivo revela en qué parte de
+tu disco vive la carpeta.
+
+Desde la consola funciona sin abrir el editor:
+
+```
+html-editor --export-mhtml recetas   # escribe recetas/index.mhtml
+html-editor recibido.mhtml           # lo desempaqueta en ./recibido/ y lo abre
+```
 
 **Enlaces que se pueden editar.** Hacés click en un enlace y aparece un panel
 arriba o abajo —donde entre— con el texto legible, la dirección, un interruptor

@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -36,6 +37,8 @@ FILE|FOLDER:
     A name with an extension is a file:   html-editor page.html
     A name without one is a folder, and
     its %s is edited:             html-editor notes
+    An .mhtml archive is unpacked into
+    a folder and edited:                  html-editor page.mhtml
     Nothing at all means %s in the current directory.
 
     A document that does not exist yet opens on a complete HTML skeleton
@@ -51,6 +54,7 @@ OPTIONS:
     --read-only       Disable every write endpoint (view only)
     --no-browser      Start normally but do not open the browser
     --dev <dir>       Serve the UI from a source folder (development)
+    --export-mhtml    Pack the document into an .mhtml file and exit
     --version         Print version information
     --help            Show this help
 
@@ -59,10 +63,14 @@ EXAMPLES:
     html-editor about.html          # edit ./about.html
     html-editor docs/guide.html     # edit a file in another folder
     html-editor recipes             # edit ./recipes/index.html
+    html-editor --export-mhtml recipes   # pack it into recipes/index.mhtml
+    html-editor received.mhtml      # unpack it into ./received/ and edit it
     html-editor --serve --port 8099 # run as a daemon, no browser
 
 Pasted images are stored next to the document and linked relatively, so the
-folder stays self-contained and can be published as-is.
+folder stays self-contained and can be published as-is. That same folder can
+be packed into a single .mhtml file — the "web page, single file" of Chrome,
+Edge and Word — to send it by mail, and unpacked back into a folder to edit it.
 `, defaultFileName, defaultFileName)
 }
 
@@ -76,6 +84,7 @@ func main() {
 		readOnly    = flag.Bool("read-only", false, "disable write endpoints")
 		noBrowser   = flag.Bool("no-browser", false, "do not open the browser")
 		devRoot     = flag.String("dev", "", "serve the UI from this source folder instead of the embedded copy")
+		exportMHTML = flag.Bool("export-mhtml", false, "pack the document into an .mhtml file and exit")
 		showVersion = flag.Bool("version", false, "print version information")
 	)
 	flag.Parse()
@@ -90,9 +99,28 @@ func main() {
 		target = flag.Arg(0)
 	}
 
+	// An .mhtml is an archive, not a document: opening one unpacks it into a
+	// folder of its own and edits what came out.
+	if isMHTMLName(target) {
+		unpacked, err := unpackArchiveFile(target)
+		if err != nil {
+			log.Fatalf("html-editor: %v", err)
+		}
+		target = unpacked
+	}
+
 	doc, err := OpenDocument(target)
 	if err != nil {
 		log.Fatalf("html-editor: %v", err)
+	}
+
+	if *exportMHTML {
+		path, err := exportDocument(doc)
+		if err != nil {
+			log.Fatalf("html-editor: %v", err)
+		}
+		fmt.Printf("packed   %s\n", path)
+		return
 	}
 
 	bind := *host
@@ -142,6 +170,69 @@ func main() {
 	if err := server.Serve(listener); err != nil {
 		log.Fatalf("html-editor: server error: %v", err)
 	}
+}
+
+// unpackArchiveFile turns page.mhtml into page/index.html plus its assets and
+// answers with the document to edit. The folder it creates is a new one: an
+// import that silently overwrote a folder you already had would be the kind of
+// surprise a file manager never gives you.
+func unpackArchiveFile(path string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	archive, err := parseMHTML(data)
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", path, err)
+	}
+
+	dir := freeFolderName(strings.TrimSuffix(path, filepath.Ext(path)))
+	html, stored, err := importMHTML(archive, dir, defaultFileName)
+	if err != nil {
+		return "", err
+	}
+	document := filepath.Join(dir, defaultFileName)
+	if err := os.WriteFile(document, []byte(html), 0o644); err != nil {
+		return "", err
+	}
+
+	fmt.Printf("imported %s\n", absOrSelf(path))
+	fmt.Printf("unpacked %s and %d file(s) next to it\n", absOrSelf(document), len(stored))
+	return document, nil
+}
+
+func freeFolderName(base string) string {
+	candidate := base
+	for i := 2; ; i++ {
+		if _, err := os.Stat(candidate); os.IsNotExist(err) {
+			return candidate
+		}
+		candidate = fmt.Sprintf("%s-%d", base, i)
+	}
+}
+
+// exportDocument packs a document from the command line, so publishing a
+// folder as a single file can be scripted without opening the editor.
+func exportDocument(doc *Document) (string, error) {
+	content, err := doc.Read()
+	if err != nil {
+		return "", err
+	}
+	data, err := buildMHTML(mhtmlDocument{
+		Name:  doc.Name,
+		Dir:   doc.Dir,
+		HTML:  content,
+		Title: titleOf(content),
+		Date:  time.Now(),
+	})
+	if err != nil {
+		return "", err
+	}
+	target := filepath.Join(doc.Dir, exportName(doc.Name))
+	if err := os.WriteFile(target, data, 0o644); err != nil {
+		return "", err
+	}
+	return target, nil
 }
 
 func displayHost(bind string) string {

@@ -57,6 +57,9 @@ func (a *App) Routes() http.Handler {
 	mux.HandleFunc("/api/document", a.handleDocument)
 	mux.HandleFunc("/api/assets", a.handleAssets)
 	mux.HandleFunc("/api/fetch-asset", a.handleFetchAsset)
+	mux.HandleFunc("/api/export.mhtml", a.handleExportDownload)
+	mux.HandleFunc("/api/export-mhtml", a.handleExportToFolder)
+	mux.HandleFunc("/api/import-mhtml", a.handleImport)
 	mux.HandleFunc("/api/folder", a.handleFolder)
 	mux.HandleFunc("/api/open", a.handleOpen)
 	mux.HandleFunc("/api/close", a.handleClose)
@@ -255,6 +258,126 @@ func (a *App) handleAssets(w http.ResponseWriter, r *http.Request) {
 		"name": name,
 		"url":  "/doc/" + name,
 		"size": len(raw),
+	})
+}
+
+// archive packs the document as it is on disk. Exporting what was saved, and
+// not what the browser holds, is what keeps the archive and the folder telling
+// the same story; the editor saves first when there are pending changes.
+func (a *App) archive() ([]byte, string, error) {
+	content, err := a.doc.Read()
+	if err != nil {
+		return nil, "", err
+	}
+	data, err := buildMHTML(mhtmlDocument{
+		Name:  a.doc.Name,
+		Dir:   a.doc.Dir,
+		HTML:  content,
+		Title: titleOf(content),
+		Date:  time.Now(),
+	})
+	if err != nil {
+		return nil, "", err
+	}
+	return data, exportName(a.doc.Name), nil
+}
+
+// handleExportDownload hands the archive to the browser as a download, which
+// is the only way out when the editor runs on another machine (--serve).
+func (a *App) handleExportDownload(w http.ResponseWriter, r *http.Request) {
+	data, name, err := a.archive()
+	if err != nil {
+		writeJSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+	w.Header().Set("Content-Type", "multipart/related")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", name))
+	w.Header().Set("Content-Length", fmt.Sprint(len(data)))
+	_, _ = w.Write(data)
+}
+
+// handleExportToFolder writes the archive next to the document, which is what
+// you want when the file is going to be attached to a mail right away.
+func (a *App) handleExportToFolder(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if a.opts.ReadOnly {
+		writeJSONError(w, http.StatusForbidden, fmt.Errorf("read-only mode"))
+		return
+	}
+	data, name, err := a.archive()
+	if err != nil {
+		writeJSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if err := a.doc.EnsureFolder(); err != nil {
+		writeJSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+	target := filepath.Join(a.doc.Dir, name)
+	if err := os.WriteFile(target, data, 0o644); err != nil {
+		writeJSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"name": name,
+		"path": target,
+		"size": len(data),
+	})
+}
+
+// handleImport unpacks an archive over the open document: the parts land in the
+// document folder and the HTML replaces what was being edited. The previous
+// version is kept as the usual ".bak" copy by the document writer.
+func (a *App) handleImport(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if a.opts.ReadOnly {
+		writeJSONError(w, http.StatusForbidden, fmt.Errorf("read-only mode"))
+		return
+	}
+
+	var payload struct {
+		Data string `json:"data"` // base64, without data-URL prefix
+	}
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, mhtmlSizeLimit)).Decode(&payload); err != nil {
+		writeJSONError(w, http.StatusBadRequest, err)
+		return
+	}
+	raw, err := base64.StdEncoding.DecodeString(payload.Data)
+	if err != nil {
+		writeJSONError(w, http.StatusBadRequest, fmt.Errorf("invalid base64 payload: %w", err))
+		return
+	}
+
+	parsed, err := parseMHTML(raw)
+	if err != nil {
+		writeJSONError(w, http.StatusBadRequest, err)
+		return
+	}
+	if err := a.doc.EnsureFolder(); err != nil {
+		writeJSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+	html, stored, err := importMHTML(parsed, a.doc.Dir, a.doc.Name)
+	if err != nil {
+		writeJSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if err := a.doc.Write(html); err != nil {
+		writeJSONError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"assets":   len(stored),
+		"stored":   stored,
+		"subject":  parsed.Subject,
+		"modified": a.doc.ModTime().Format(time.RFC3339),
 	})
 }
 
