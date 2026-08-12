@@ -14,6 +14,8 @@ html-editor mypage.html      # opens the browser on that file
 Close the tab and the command exits a few seconds later, like any other
 well-behaved desktop tool.
 
+![The editor with the source view open and a link being edited](docs/screenshot.png)
+
 ## Why
 
 Editing a small static page usually means either hand-writing HTML or dragging a

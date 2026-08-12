@@ -15,6 +15,8 @@ html-editor miarchivo.html      # se abre el navegador en ese archivo
 Cerrás la pestaña y el comando termina unos segundos después, como cualquier
 herramienta de escritorio que se porte bien.
 
+![El editor con la vista de código abierta y un enlace en edición](docs/screenshot.png)
+
 ## Para qué
 
 Editar una página estática chica suele significar o escribir HTML a mano o meter

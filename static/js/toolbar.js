@@ -85,8 +85,12 @@
   var fontSelect = document.getElementById('ctl-font');
   fontSelect.innerHTML = ''; // the placeholder option comes from FONTS below
   FONTS.forEach(function (entry) {
-    var label = entry[1].indexOf('.') !== -1 ? HE.t(entry[1]) : entry[1];
-    var option = HE.el('option', { value: entry[0], text: label });
+    var translatable = entry[1].indexOf('.') !== -1;
+    var label = translatable ? HE.t(entry[1]) : entry[1];
+    // data-i18n keeps the placeholder in sync when the language is switched.
+    var option = HE.el('option', {
+      value: entry[0], text: label, 'data-i18n': translatable ? entry[1] : null
+    });
     if (entry[0]) { option.style.fontFamily = entry[0]; }
     fontSelect.appendChild(option);
   });
