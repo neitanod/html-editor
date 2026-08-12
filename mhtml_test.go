@@ -246,6 +246,46 @@ func TestImportArchiveSavedByAnotherBrowser(t *testing.T) {
 	}
 }
 
+// A file name with a space is escaped in the address a reader resolves, so the
+// part has to be labelled with the escaped form or the picture goes missing.
+func TestRoundTripWithAwkwardFileNames(t *testing.T) {
+	dir := t.TempDir()
+	// A space inside a srcset separates the address from its descriptor, so
+	// there it has to travel escaped; in src it can be written plainly.
+	html := `<html><body>` +
+		`<img src="mi foto.png" srcset="mi%20foto.png 1x, otra&amp;foto.png 2x">` +
+		`</body></html>`
+	mustWrite(t, filepath.Join(dir, "index.html"), []byte(html))
+	mustWrite(t, filepath.Join(dir, "mi foto.png"), []byte("uno"))
+	mustWrite(t, filepath.Join(dir, "otra&foto.png"), []byte("dos"))
+
+	archive, err := buildMHTML(mhtmlDocument{Name: "index.html", Dir: dir, HTML: html})
+	if err != nil {
+		t.Fatalf("buildMHTML: %v", err)
+	}
+	if !strings.Contains(string(archive), "Content-Location: http://html-editor.invalid/mi%20foto.png") {
+		t.Error("the space in the name was not escaped in the address")
+	}
+
+	parsed, err := parseMHTML(archive)
+	if err != nil {
+		t.Fatalf("parseMHTML: %v", err)
+	}
+	target := t.TempDir()
+	imported, stored, err := importMHTML(parsed, target, "index.html")
+	if err != nil {
+		t.Fatalf("importMHTML: %v", err)
+	}
+	if len(stored) != 2 {
+		t.Fatalf("expected both pictures, got %v", stored)
+	}
+	for _, ref := range collectReferences(imported) {
+		if _, err := os.Stat(filepath.Join(target, ref)); err != nil {
+			t.Errorf("the imported document points at %q, which is not there", ref)
+		}
+	}
+}
+
 func TestParseRejectsSomethingElse(t *testing.T) {
 	if _, err := parseMHTML([]byte("<html><body>just a page</body></html>")); err == nil {
 		t.Error("a plain HTML file is not an archive and should be refused")
