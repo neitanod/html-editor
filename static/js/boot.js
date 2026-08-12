@@ -84,7 +84,7 @@
     d.addEventListener('input', function () {
       HE.markDirty();
       clearTimeout(typingTimer);
-      typingTimer = setTimeout(function () { HE.pushHistory(); }, 550);
+      typingTimer = setTimeout(function () { typingTimer = null; HE.pushHistory(); }, 550);
       HE.emit('typed');
     });
 
@@ -112,7 +112,13 @@
     mutationObserver = new MutationObserver(function (records) {
       var meaningful = records.some(function (record) {
         if (record.type === 'attributes') {
-          return ['class', 'contenteditable', 'spellcheck', 'data-he-id'].indexOf(record.attributeName) === -1;
+          var name = record.attributeName || '';
+          // Bookkeeping the editor writes on the document (selection marks,
+          // lookup ids) must never make the file look modified.
+          if (name.indexOf('data-he-') === 0 || name.indexOf('data-html-editor') === 0) {
+            return false;
+          }
+          return ['class', 'contenteditable', 'spellcheck'].indexOf(name) === -1;
         }
         return !Array.prototype.some.call(record.addedNodes, function (node) {
           return node.nodeType === 1 && node.hasAttribute('data-html-editor-ui');
@@ -296,6 +302,16 @@
 
   /* ---------------------------------------------------------- shortcuts -- */
 
+  // Undo/redo belong to whatever field has the caret. Without this check,
+  // Ctrl+Z inside the source textarea or a modal input rolls the document back
+  // instead of the text the user is typing.
+  function isHostTextField(target) {
+    if (!target || target === document.body) { return false; }
+    var tag = target.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' ||
+      target.isContentEditable === true;
+  }
+
   function handleShortcut(event, fromFrame) {
     var mod = event.ctrlKey || event.metaKey;
     if (!mod) {
@@ -308,8 +324,13 @@
     var key = event.key.toLowerCase();
 
     if (key === 's') { event.preventDefault(); HE.save(); return; }
-    if (key === 'z' && !event.shiftKey) { event.preventDefault(); HE.undo(); return; }
-    if ((key === 'z' && event.shiftKey) || key === 'y') { event.preventDefault(); HE.redo(); return; }
+    if (key === 'z' || key === 'y') {
+      if (!fromFrame && isHostTextField(event.target)) { return; }
+      event.preventDefault();
+      flushTypingSnapshot();
+      if (key === 'y' || event.shiftKey) { HE.redo(); } else { HE.undo(); }
+      return;
+    }
     if (key === 'k') { event.preventDefault(); HE.openLinkDialog && HE.openLinkDialog(); return; }
     if (key === 'e' && event.shiftKey) { event.preventDefault(); HE.source.toggle(); return; }
     if (key === 'enter' && !fromFrame) { return; }
@@ -317,6 +338,15 @@
       event.preventDefault();
       pastePlainText();
     }
+  }
+
+  // Typing is snapshotted on a debounce; undoing before it fires would jump
+  // over the last word and make it unrecoverable with redo.
+  function flushTypingSnapshot() {
+    if (!typingTimer) { return; }
+    clearTimeout(typingTimer);
+    typingTimer = null;
+    HE.pushHistory();
   }
 
   function pastePlainText() {

@@ -645,6 +645,20 @@
       name === 'contenteditable' || name === 'spellcheck';
   }
 
+  /**
+   * True when `name` is usable with setAttribute. Checked on a detached probe
+   * so an invalid name never touches (or half-mutates) the real element.
+   */
+  function isValidAttrName(name) {
+    var probe = document.createElement('div');
+    try {
+      probe.setAttribute(name, '');
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
   function suggestionsFor(element) {
     var tag = element.tagName.toLowerCase();
     var generic = ATTR_SUGGESTIONS['*'];
@@ -677,18 +691,26 @@
       var currentName = name;
 
       nameInput.addEventListener('change', function () {
-        var next = nameInput.value.trim();
+        var next = nameInput.value.trim().toLowerCase();
         if (!next || next === currentName) { nameInput.value = currentName; return; }
-        try {
-          HE.edit(function () {
-            element.removeAttribute(currentName);
-            element.setAttribute(next, valueInput.value);
-          });
-          currentName = next;
-        } catch (err) {
+        if (isHiddenAttr(next)) {
+          HE.toast(HE.t('props.reserved', 'That attribute is managed by the editor'), 'warn');
+          nameInput.value = currentName;
+          return;
+        }
+        /* Validate before touching the element: a failed rename must leave it intact. */
+        if (!isValidAttrName(next)) {
           HE.toast(HE.t('props.badAttr', 'Invalid attribute name: ') + next, 'error');
           nameInput.value = currentName;
+          return;
         }
+        var oldName = currentName;
+        HE.edit(function () {
+          element.setAttribute(next, valueInput.value);
+          element.removeAttribute(oldName);
+        });
+        currentName = next;
+        nameInput.value = next;
       });
       valueInput.addEventListener('change', function () {
         HE.edit(function () { element.setAttribute(currentName, valueInput.value); });
@@ -725,12 +747,11 @@
         HE.toast(HE.t('props.reserved', 'That attribute is managed by the editor'), 'warn');
         return;
       }
-      try {
-        HE.edit(function () { element.setAttribute(name, addValue.value); });
-      } catch (err) {
+      if (!isValidAttrName(name)) {
         HE.toast(HE.t('props.badAttr', 'Invalid attribute name: ') + name, 'error');
         return;
       }
+      HE.edit(function () { element.setAttribute(name, addValue.value); });
       rows.appendChild(attrRow(name, addValue.value));
       addName.value = '';
       addValue.value = '';
@@ -1015,15 +1036,34 @@
     node.setAttribute('charset', value);
   }
 
+  /**
+   * Find a <meta> in <head> whose attribute `attr` equals `value`. The value
+   * may contain quotes or other characters invalid in a selector, so the
+   * selector path is guarded (CSS.escape when available, try/catch always)
+   * with a manual scan of head.children as fallback.
+   */
+  function findHeadMeta(d, attr, value) {
+    try {
+      var escaped = (window.CSS && window.CSS.escape) ? window.CSS.escape(value) : value;
+      var hit = d.head.querySelector('meta[' + attr + '="' + escaped + '"]');
+      if (hit) { return hit; }
+    } catch (err) { /* selector could not be built — fall through to the scan */ }
+    var metas = d.head.getElementsByTagName('meta');
+    for (var i = 0; i < metas.length; i++) {
+      if (metas[i].getAttribute(attr) === value) { return metas[i]; }
+    }
+    return null;
+  }
+
   function setNamedMeta(d, name, value) {
-    var node = d.head.querySelector('meta[name="' + name + '"]');
+    var node = findHeadMeta(d, 'name', name);
     if (!value) { if (node) { node.remove(); } return; }
     if (!node) { node = d.createElement('meta'); node.setAttribute('name', name); d.head.appendChild(node); }
     node.setAttribute('content', value);
   }
 
   function setPropertyMeta(d, property, value) {
-    var node = d.head.querySelector('meta[property="' + property + '"]');
+    var node = findHeadMeta(d, 'property', property);
     if (!value) { if (node) { node.remove(); } return; }
     if (!node) { node = d.createElement('meta'); node.setAttribute('property', property); d.head.appendChild(node); }
     node.setAttribute('content', value);

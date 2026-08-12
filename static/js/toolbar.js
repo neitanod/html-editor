@@ -109,17 +109,24 @@
     applyInlineStyle('fontSize', sizeSelect.value);
   });
 
-  var fore = document.getElementById('ctl-fore');
-  fore.addEventListener('input', function () {
-    document.getElementById('swatch-fore').style.setProperty('--swatch', fore.value);
-    applyInlineStyle('color', fore.value);
-  });
+  // A colour picker fires `input` on every pixel of the drag. Committing each
+  // of those would fill the undo history and, worse, collapse the selection
+  // after the first one, so the rest of the drag repaints the whole block.
+  // The swatch previews live; the document is written once, on `change`.
+  function wireColourPicker(inputId, swatchId, property) {
+    var input = document.getElementById(inputId);
+    var swatch = document.getElementById(swatchId);
+    input.addEventListener('input', function () {
+      swatch.style.setProperty('--swatch', input.value);
+    });
+    input.addEventListener('change', function () {
+      swatch.style.setProperty('--swatch', input.value);
+      applyInlineStyle(property, input.value);
+    });
+  }
 
-  var back = document.getElementById('ctl-back');
-  back.addEventListener('input', function () {
-    document.getElementById('swatch-back').style.setProperty('--swatch', back.value);
-    applyInlineStyle('backgroundColor', back.value);
-  });
+  wireColourPicker('ctl-fore', 'swatch-fore', 'color');
+  wireColourPicker('ctl-back', 'swatch-back', 'backgroundColor');
 
   document.getElementById('btn-link').addEventListener('click', function () {
     HE.openLinkDialog();

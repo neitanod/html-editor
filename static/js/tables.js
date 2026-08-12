@@ -80,9 +80,6 @@
     cell.removeAttribute('id');
     if (cell.classList) { cell.classList.remove('he-cell-selected'); }
     if (!cell.getAttribute('class')) { cell.removeAttribute('class'); }
-    cell.style.outline = '';
-    cell.style.outlineOffset = '';
-    if (!cell.getAttribute('style')) { cell.removeAttribute('style'); }
     cell.innerHTML = '<br>';
     return cell;
   }
@@ -209,26 +206,23 @@
 
   /* --------------------------------------------- rectangular selection --- */
 
-  /* Selected cells carry the he-cell-selected class (styled by the UI
-   * stylesheet injected below, stripped on save) plus an inline outline as a
-   * fallback when that stylesheet is missing. The inline outline is swept
-   * out of the serialised output by the HE.serialize wrapper further down. */
+  /* Selected cells carry ONLY the he-cell-selected class: it is styled by
+   * the editor-only stylesheet injected into the iframe below, ignored by
+   * the mutation observer (class changes never mark the document dirty)
+   * and stripped from the output by HE.serialize. No inline styles, no
+   * bookkeeping attributes — nothing to sweep at save time. */
 
-  var cellSelection = [];   // [{cell, prevOutline, prevOffset}]
+  var cellSelection = [];   // plain array of selected cell elements
   var selectionAnchor = null;
 
   function selectedCells() {
-    return cellSelection.map(function (item) { return item.cell; });
+    return cellSelection.slice();
   }
 
   function clearCellSelection() {
-    cellSelection.forEach(function (item) {
-      var cell = item.cell;
+    cellSelection.forEach(function (cell) {
       if (cell.classList) { cell.classList.remove('he-cell-selected'); }
       if (!cell.getAttribute('class')) { cell.removeAttribute('class'); }
-      cell.style.outline = item.prevOutline || '';
-      cell.style.outlineOffset = item.prevOffset || '';
-      if (!cell.getAttribute('style')) { cell.removeAttribute('style'); }
     });
     cellSelection = [];
   }
@@ -236,14 +230,8 @@
   function applyCellSelection(cells) {
     clearCellSelection();
     cells.forEach(function (cell) {
-      cellSelection.push({
-        cell: cell,
-        prevOutline: cell.style.outline,
-        prevOffset: cell.style.outlineOffset
-      });
+      cellSelection.push(cell);
       cell.classList.add('he-cell-selected');
-      cell.style.outline = '2px solid #4aa3ff';
-      cell.style.outlineOffset = '-2px';
     });
   }
 
@@ -258,7 +246,7 @@
 
   /** Drop dead references and clean stale markers left by undo/redo. */
   function pruneCellSelection() {
-    cellSelection = cellSelection.filter(function (item) { return item.cell.isConnected; });
+    cellSelection = cellSelection.filter(function (cell) { return cell.isConnected; });
     var d = HE.doc();
     if (!d) { return; }
     var live = selectedCells();
@@ -266,33 +254,8 @@
       if (live.indexOf(cell) !== -1) { return; }
       cell.classList.remove('he-cell-selected');
       if (!cell.getAttribute('class')) { cell.removeAttribute('class'); }
-      cell.style.outline = '';
-      cell.style.outlineOffset = '';
-      if (!cell.getAttribute('style')) { cell.removeAttribute('style'); }
     });
   }
-
-  /* Never let the selection outline leak into the saved file: strip the
-   * inline fallback outline right before serialising and put it back after. */
-  var origSerialize = HE.serialize;
-  HE.serialize = function () {
-    var d = HE.doc();
-    var restore = [];
-    if (d) {
-      Array.prototype.slice.call(d.querySelectorAll('.he-cell-selected')).forEach(function (cell) {
-        restore.push([cell, cell.style.outline, cell.style.outlineOffset]);
-        cell.style.outline = '';
-        cell.style.outlineOffset = '';
-        if (!cell.getAttribute('style')) { cell.removeAttribute('style'); }
-      });
-    }
-    var out = origSerialize();
-    restore.forEach(function (item) {
-      item[0].style.outline = item[1];
-      item[0].style.outlineOffset = item[2];
-    });
-    return out;
-  };
 
   /* ------------------------------------------------- caret / selection --- */
 

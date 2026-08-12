@@ -19,6 +19,11 @@
   /* Elements whose inner text must be preserved byte-for-byte. */
   var RAW_TAGS = { pre: 1, textarea: 1, script: 1, style: 1 };
 
+  /* HE.serialize marks elements whose computed white-space preserves spaces
+   * (pre / pre-wrap / break-spaces) with this attribute; the printer treats
+   * them like <pre> and strips the attribute so it never reaches the file. */
+  var RAW_ATTR_RE = /\sdata-he-raw\b/i;
+
   /* Elements kept in the flow of the surrounding text when re-indenting. */
   var INLINE_TAGS = {
     a: 1, abbr: 1, b: 1, bdi: 1, bdo: 1, br: 1, cite: 1, code: 1, data: 1,
@@ -102,15 +107,27 @@
       var raw = html.slice(lt, te);
       var name = nameMatch[0].toLowerCase();
       var selfClosing = /\/\s*>$/.test(raw);
-      tokens.push({
+      var token = {
         type: isClose ? 'close' : 'open',
         raw: raw, name: name, selfClosing: selfClosing
-      });
+      };
+      tokens.push(token);
       i = te;
 
-      /* Raw-text elements: swallow everything until the matching close tag. */
-      if (!isClose && !selfClosing && RAW_TAGS[name]) {
-        var closeIdx = lower.indexOf('</' + name, i);
+      /* Raw-content elements: swallow everything until the matching close
+       * tag. Both the intrinsic raw tags and any element marked with
+       * data-he-raw (white-space-preserving CSS) qualify. */
+      if (!isClose && !selfClosing && !VOID_TAGS[name] &&
+          (RAW_TAGS[name] || RAW_ATTR_RE.test(raw))) {
+        token.rawContent = true;
+        var closeIdx;
+        if (RAW_TAGS[name]) {
+          /* These cannot nest themselves: first close tag wins. */
+          closeIdx = lower.indexOf('</' + name, i);
+        } else {
+          /* Marked elements can contain same-named children: balance them. */
+          closeIdx = findBalancedClose(lower, name, i);
+        }
         if (closeIdx === -1) {
           if (i < n) { tokens.push({ type: 'rawtext', raw: html.slice(i) }); }
           i = n;
@@ -121,6 +138,74 @@
       }
     }
     return tokens;
+  }
+
+  function isTagDelim(ch) {
+    return ch === '' || ch === '>' || ch === '/' || /\s/.test(ch);
+  }
+
+  /** Index (in `lower`) of the close tag matching an already-consumed open
+   *  tag of `name`, counting same-named nested opens. -1 when unclosed. */
+  function findBalancedClose(lower, name, from) {
+    var openNeedle = '<' + name;
+    var closeNeedle = '</' + name;
+    var n = lower.length;
+    var depth = 1;
+    var i = from;
+    while (i < n) {
+      var c = lower.indexOf(closeNeedle, i);
+      if (c === -1) { return -1; }
+      var o = lower.indexOf(openNeedle, i);
+      while (o !== -1 && o < c && !isTagDelim(lower.charAt(o + openNeedle.length))) {
+        o = lower.indexOf(openNeedle, o + 1);
+      }
+      if (o !== -1 && o < c) {
+        depth++;
+        i = o + openNeedle.length;
+      } else if (isTagDelim(lower.charAt(c + closeNeedle.length))) {
+        depth--;
+        if (depth === 0) { return c; }
+        i = c + closeNeedle.length;
+      } else {
+        i = c + 1; /* something like </divx — keep scanning */
+      }
+    }
+    return -1;
+  }
+
+  /** Removes the editor-injected data-he-raw attribute from an opening tag.
+   *  Quote-aware, so attribute values that merely mention it are untouched. */
+  function stripRawAttr(tag) {
+    if (!RAW_ATTR_RE.test(tag)) { return tag; }
+    var out = '';
+    var i = 0;
+    var n = tag.length;
+    var quote = '';
+    while (i < n) {
+      var ch = tag.charAt(i);
+      if (quote) {
+        out += ch;
+        if (ch === quote) { quote = ''; }
+        i++;
+        continue;
+      }
+      if (ch === '"' || ch === "'") {
+        quote = ch;
+        out += ch;
+        i++;
+        continue;
+      }
+      if (/\s/.test(ch)) {
+        var m = /^\s+data-he-raw(\s*=\s*("[^"]*"|'[^']*'|[^\s>]+))?/i.exec(tag.slice(i));
+        if (m) {
+          i += m[0].length;
+          continue;
+        }
+      }
+      out += ch;
+      i++;
+    }
+    return out;
   }
 
   /* ------------------------------------------------------ pretty printer -- */
@@ -174,10 +259,10 @@
         parent.children.push({ type: 'raw', raw: tok.raw });
 
       } else if (tok.type === 'open') {
-        if (RAW_TAGS[tok.name] && !tok.selfClosing) {
-          /* Zero added whitespace around the verbatim content, so
-           * <pre>/<textarea>/<script>/<style> never change. */
-          var assembled = tok.raw;
+        if (tok.rawContent) {
+          /* Zero added whitespace around the verbatim content, so raw
+           * elements (intrinsic or data-he-raw marked) never change. */
+          var assembled = stripRawAttr(tok.raw);
           var k = i + 1;
           if (k < tokens.length && tokens[k].type === 'rawtext') {
             assembled += tokens[k].raw;
@@ -190,7 +275,9 @@
           parent.children.push({ type: 'raw', raw: assembled });
           i = k - 1;
         } else {
-          var node = { type: 'el', tag: tok.name, openRaw: tok.raw, closeRaw: '', children: [] };
+          /* Void/self-closing elements can carry the marker too (inherited
+           * white-space): strip it here as well so it never reaches disk. */
+          var node = { type: 'el', tag: tok.name, openRaw: stripRawAttr(tok.raw), closeRaw: '', children: [] };
           parent.children.push(node);
           if (!VOID_TAGS[tok.name] && !tok.selfClosing) { stack.push(node); }
         }
@@ -601,14 +688,57 @@
 
   /* ------------------------------------------------------ reveal element -- */
 
+  /** True while the textarea content diverges from the live document.
+   *  Safe to call at any time, even before the panel was ever opened. */
+  function hasPendingChanges() {
+    return !!input && input.value !== lastApplied;
+  }
+
   /**
    * Opens the panel and selects the opening tag of `el` in the source text.
+   * When the textarea holds unapplied edits, asks first (Apply / Discard /
+   * Cancel) instead of silently overwriting them.
+   */
+  function revealElement(el) {
+    if (!el || el.nodeType !== 1) { return; }
+    if (hasPendingChanges()) {
+      HE.modal({
+        title: HE.t('source.unappliedTitle', 'Unapplied source changes'),
+        body: HE.el('p', { text: HE.t('source.unappliedBody', 'The source panel has changes you did not apply. Apply them before jumping to the element?') }),
+        actions: [
+          {
+            label: HE.t('source.apply'),
+            primary: true,
+            onClick: function (closeModal) {
+              closeModal();
+              if (apply()) { doReveal(el); }
+            }
+          },
+          {
+            label: HE.t('source.discard', 'Discard'),
+            onClick: function (closeModal) {
+              closeModal();
+              setDirty(false);
+              doReveal(el); /* overwrites the textarea from the document */
+            }
+          },
+          {
+            label: HE.t('common.cancel'),
+            onClick: function (closeModal) { closeModal(); }
+          }
+        ]
+      });
+      return;
+    }
+    doReveal(el);
+  }
+
+  /**
    * The element is briefly tagged with a unique data-he-find attribute; the
    * serialized text is searched for it, the marker is stripped from the
    * displayed text, and the recorded offset selects the clean opening tag.
    */
-  function revealElement(el) {
-    if (!el || el.nodeType !== 1) { return; }
+  function doReveal(el) {
     open();
     var d = HE.doc();
     if (!d) { return; }
@@ -727,6 +857,7 @@
     isOpen: isOpen,
     sync: sync,
     apply: apply,
+    hasPendingChanges: hasPendingChanges,
     revealElement: revealElement
   };
   HE.modules.source = HE.source;

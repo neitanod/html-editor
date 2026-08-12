@@ -209,24 +209,25 @@
       return btn;
     }
 
-    function setStyle(prop, value) {
-      HE.edit(function () { img.style[prop] = value; });
+    // One click is one undo step: every declaration of an alignment is applied
+    // inside a single edit.
+    function setStyles(declarations) {
+      HE.edit(function () {
+        Object.keys(declarations).forEach(function (prop) {
+          img.style[prop] = declarations[prop];
+        });
+      });
       positionImageChrome();
     }
 
     tool(HE.t('image.alignLeft', 'Align left'), '&#8676;', function () {
-      setStyle('float', 'left'); setStyle('margin', '0 1rem 1rem 0'); setStyle('display', '');
+      setStyles({ float: 'left', margin: '0 1rem 1rem 0', display: '' });
     });
     tool(HE.t('image.alignCenter', 'Centre'), '&#8596;', function () {
-      HE.edit(function () {
-        img.style.float = '';
-        img.style.display = 'block';
-        img.style.margin = '1rem auto';
-      });
-      positionImageChrome();
+      setStyles({ float: '', display: 'block', margin: '1rem auto' });
     });
     tool(HE.t('image.alignRight', 'Align right'), '&#8677;', function () {
-      setStyle('float', 'right'); setStyle('margin', '0 0 1rem 1rem'); setStyle('display', '');
+      setStyles({ float: 'right', margin: '0 0 1rem 1rem', display: '' });
     });
     bar.appendChild(HE.el('span', { class: 'floatbar__sep' }));
 

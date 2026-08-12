@@ -47,6 +47,9 @@
       'source.hint': 'Edit the source and press Apply (Ctrl+Enter)',
       'source.applied': 'Source applied to the document',
       'source.invalid': 'The source could not be parsed',
+      'source.unappliedTitle': 'Unapplied source changes',
+      'source.unappliedBody': 'The source panel has changes you did not apply. Apply them before jumping to the element?',
+      'common.discard': 'Discard',
       'status.saved': 'Saved', 'status.unsaved': 'Unsaved changes',
       'status.selection': 'Selection', 'status.nothing': 'Nothing selected',
       'save.ok': 'Saved to disk', 'save.fail': 'Could not save: ',
@@ -150,6 +153,9 @@
       'source.hint': 'Editá el código y apretá Aplicar (Ctrl+Enter)',
       'source.applied': 'Código aplicado al documento',
       'source.invalid': 'No se pudo interpretar el código',
+      'source.unappliedTitle': 'Cambios sin aplicar en el código',
+      'source.unappliedBody': 'El panel de código tiene cambios que no aplicaste. ¿Los aplico antes de saltar al elemento?',
+      'common.discard': 'Descartar',
       'status.saved': 'Guardado', 'status.unsaved': 'Cambios sin guardar',
       'status.selection': 'Selección', 'status.nothing': 'Nada seleccionado',
       'save.ok': 'Guardado en disco', 'save.fail': 'No se pudo guardar: ',
@@ -452,11 +458,42 @@
 
   var EDITOR_ATTRS = ['contenteditable', 'spellcheck', 'data-he-id', 'data-he-hover'];
 
+  var PRESERVING_WHITESPACE = ['pre', 'pre-wrap', 'break-spaces'];
+
+  /**
+   * Marks, on the clone, the elements whose CSS preserves whitespace, so the
+   * pretty printer leaves their content byte-for-byte. Without this an element
+   * styled `white-space: pre` loses its spacing on every save; the tags the
+   * printer already knows (pre, textarea, script, style) are not enough,
+   * because the rule can come from any stylesheet.
+   */
+  function markWhitespaceSensitive(original, clone) {
+    var win = HE.win();
+    // The mark only makes sense for the printer, which is also what removes it
+    // again; without the printer it would end up in the saved file.
+    if (!win || !HE.formatHTML) { return; }
+    var live = original.querySelectorAll('*');
+    var copies = clone.querySelectorAll('*');
+    for (var i = 0; i < live.length && i < copies.length; i++) {
+      if (!preserves(win, live[i])) { continue; }
+      // Only the outermost element of a preserving subtree is marked: the mark
+      // of a descendant would sit inside verbatim content and reach the file.
+      var parent = live[i].parentElement;
+      if (parent && preserves(win, parent)) { continue; }
+      copies[i].setAttribute('data-he-raw', '1');
+    }
+  }
+
+  function preserves(win, element) {
+    return PRESERVING_WHITESPACE.indexOf(win.getComputedStyle(element).whiteSpace) !== -1;
+  }
+
   /** Full document HTML, with every trace of the editor removed. */
   HE.serialize = function () {
     var d = HE.doc();
     if (!d) { return ''; }
     var clone = d.documentElement.cloneNode(true);
+    markWhitespaceSensitive(d.documentElement, clone);
 
     clone.querySelectorAll('[data-html-editor-ui]').forEach(function (node) { node.remove(); });
     EDITOR_ATTRS.forEach(function (attr) {
@@ -484,6 +521,12 @@
 
   HE.save = function () {
     if (HE.readOnly) { HE.toast(HE.t('save.readonly'), 'warn'); return Promise.resolve(false); }
+    // Ctrl+S while the source panel holds unapplied edits used to write the
+    // document as it was before them, silently losing what the user typed.
+    if (HE.source && HE.source.isOpen && HE.source.isOpen() &&
+        HE.source.hasPendingChanges && HE.source.hasPendingChanges()) {
+      HE.source.apply();
+    }
     // The browser serialises everything on very few lines; the file on disk is
     // meant to stay readable, so it is re-indented before it is written.
     var content = HE.formatHTML ? HE.formatHTML(HE.serialize()) : HE.serialize();
