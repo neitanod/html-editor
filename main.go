@@ -30,12 +30,19 @@ func printUsage() {
 	fmt.Fprintf(os.Stderr, `html-editor - Visual editor for local HTML files
 
 USAGE:
-    html-editor [OPTIONS] [FILE]
+    html-editor [OPTIONS] [FILE|FOLDER]
 
-FILE:
-    Path of the .html file to edit. Defaults to %s in the current
-    directory. If the file does not exist it is created with a complete
-    HTML skeleton (html, head with title/charset/viewport, and body).
+FILE|FOLDER:
+    A name with an extension is a file:   html-editor page.html
+    A name without one is a folder, and
+    its %s is edited:             html-editor notes
+    Nothing at all means %s in the current directory.
+
+    A document that does not exist yet opens on a complete HTML skeleton
+    (html, head with title/charset/viewport, and body); the folder and the
+    file are created on the first save, so closing without saving leaves
+    nothing behind. Pasted images are stored in that same folder, which
+    keeps each document together with its assets.
 
 OPTIONS:
     --port <n>        Port for the local server (0 = pick a free one)
@@ -51,11 +58,12 @@ EXAMPLES:
     html-editor                     # edit ./index.html
     html-editor about.html          # edit ./about.html
     html-editor docs/guide.html     # edit a file in another folder
+    html-editor recipes             # edit ./recipes/index.html
     html-editor --serve --port 8099 # run as a daemon, no browser
 
 Pasted images are stored next to the document and linked relatively, so the
 folder stays self-contained and can be published as-is.
-`, defaultFileName)
+`, defaultFileName, defaultFileName)
 }
 
 func main() {
@@ -110,7 +118,11 @@ func main() {
 
 	url := fmt.Sprintf("http://%s:%d/", displayHost(bind), actualPort)
 	fmt.Printf("html-editor %s\n", Version)
-	fmt.Printf("editing  %s\n", doc.Path)
+	if doc.Pending() {
+		fmt.Printf("new      %s (created when you save)\n", doc.Path)
+	} else {
+		fmt.Printf("editing  %s\n", doc.Path)
+	}
 	fmt.Printf("serving  %s\n", url)
 	if !*serve {
 		fmt.Println("the process exits a few seconds after you close the last tab")

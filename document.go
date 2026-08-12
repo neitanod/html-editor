@@ -18,10 +18,22 @@ type Document struct {
 	Path string // absolute path of the file
 	Dir  string // absolute path of the containing folder
 	Name string // file name, e.g. "index.html"
+
+	// pending marks a document that does not exist on disk yet. Nothing is
+	// written until the first save, so opening a name to look at the skeleton
+	// and closing the tab leaves no folder and no file behind.
+	pending bool
 }
 
-// OpenDocument resolves target, creating the file with a full HTML skeleton
-// when it does not exist yet.
+// OpenDocument resolves target into the file to edit.
+//
+//	html-editor page.html    edits ./page.html
+//	html-editor notes        edits ./notes/index.html, assets included
+//	html-editor notes/       same, explicitly
+//
+// An argument with no extension names a folder: keeping a document together
+// with its images in its own folder is the point of the shorthand. Neither the
+// folder nor the file is created here; that happens on the first save.
 func OpenDocument(target string) (*Document, error) {
 	abs, err := filepath.Abs(target)
 	if err != nil {
@@ -32,43 +44,71 @@ func OpenDocument(target string) (*Document, error) {
 	switch {
 	case err == nil && info.IsDir():
 		abs = filepath.Join(abs, defaultFileName)
-		info, err = os.Stat(abs)
-		if err == nil && info.IsDir() {
+		if inner, err := os.Stat(abs); err == nil && inner.IsDir() {
 			return nil, fmt.Errorf("%s is a directory", abs)
 		}
 	case err == nil:
-		// Existing file, nothing to do.
-	}
-
-	if _, err := os.Stat(abs); os.IsNotExist(err) {
-		if err := os.MkdirAll(filepath.Dir(abs), 0o755); err != nil {
-			return nil, fmt.Errorf("cannot create folder for %s: %w", abs, err)
+		// An existing file is edited as given, extension or not.
+	case os.IsNotExist(err):
+		if namesFolder(target) {
+			abs = filepath.Join(abs, defaultFileName)
 		}
-		title := titleFromFileName(filepath.Base(abs))
-		if err := os.WriteFile(abs, []byte(skeleton(title)), 0o644); err != nil {
-			return nil, fmt.Errorf("cannot create %s: %w", abs, err)
-		}
-		fmt.Printf("created  %s\n", abs)
-	} else if err != nil {
+	default:
 		return nil, err
 	}
 
-	return &Document{
+	doc := &Document{
 		Path: abs,
 		Dir:  filepath.Dir(abs),
 		Name: filepath.Base(abs),
-	}, nil
+	}
+	if _, err := os.Stat(abs); os.IsNotExist(err) {
+		doc.pending = true
+	}
+	return doc, nil
 }
 
-// Read returns the current content of the file on disk.
+// namesFolder reports whether an argument that does not exist yet should be
+// read as a folder to create rather than as a file.
+func namesFolder(target string) bool {
+	trimmed := strings.TrimSpace(target)
+	if strings.HasSuffix(trimmed, "/") || strings.HasSuffix(trimmed, string(os.PathSeparator)) {
+		return true
+	}
+	return filepath.Ext(trimmed) == ""
+}
+
+// Pending reports whether the document still has to be created on disk.
+func (d *Document) Pending() bool {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	return d.pending
+}
+
+// Read returns the current content of the file, or the skeleton a document that
+// does not exist yet will be created with.
 func (d *Document) Read() (string, error) {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 	data, err := os.ReadFile(d.Path)
 	if err != nil {
+		if os.IsNotExist(err) && d.pending {
+			return skeleton(d.defaultTitleLocked()), nil
+		}
 		return "", err
 	}
 	return string(data), nil
+}
+
+// defaultTitleLocked names an unsaved document after its folder when it is the
+// index of one, which is what the folder shorthand creates.
+func (d *Document) defaultTitleLocked() string {
+	if d.Name == defaultFileName {
+		if folder := filepath.Base(d.Dir); folder != "." && folder != string(os.PathSeparator) {
+			return titleFromFileName(folder)
+		}
+	}
+	return titleFromFileName(d.Name)
 }
 
 // Write saves content atomically (temp file + rename) and keeps a single
@@ -76,6 +116,10 @@ func (d *Document) Read() (string, error) {
 func (d *Document) Write(content string) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
+
+	if err := os.MkdirAll(d.Dir, 0o755); err != nil {
+		return fmt.Errorf("cannot create %s: %w", d.Dir, err)
+	}
 
 	backup := d.Path + ".bak"
 	if _, err := os.Stat(backup); os.IsNotExist(err) {
@@ -106,7 +150,17 @@ func (d *Document) Write(content string) error {
 		os.Remove(tmpName)
 		return err
 	}
+	d.pending = false
 	return nil
+}
+
+// EnsureFolder creates the document folder on demand, so an asset can be stored
+// before the document itself has ever been saved.
+func (d *Document) EnsureFolder() error {
+	d.mu.RLock()
+	dir := d.Dir
+	d.mu.RUnlock()
+	return os.MkdirAll(dir, 0o755)
 }
 
 // ModTime reports the modification time of the file on disk.

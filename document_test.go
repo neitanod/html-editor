@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestOpenDocumentCreatesSkeleton(t *testing.T) {
+func TestOpenDocumentOffersSkeletonWithoutTouchingDisk(t *testing.T) {
 	dir := t.TempDir()
 	target := filepath.Join(dir, "my-new-page.html")
 
@@ -17,6 +17,9 @@ func TestOpenDocumentCreatesSkeleton(t *testing.T) {
 	}
 	if doc.Name != "my-new-page.html" || doc.Dir != dir {
 		t.Fatalf("unexpected document metadata: %+v", doc)
+	}
+	if !doc.Pending() {
+		t.Error("a document that is not on disk should be pending")
 	}
 
 	content, err := doc.Read()
@@ -28,6 +31,100 @@ func TestOpenDocumentCreatesSkeleton(t *testing.T) {
 		if !strings.Contains(content, want) {
 			t.Errorf("skeleton is missing %q\n%s", want, content)
 		}
+	}
+
+	if _, err := os.Stat(target); !os.IsNotExist(err) {
+		t.Error("opening a document must not create it: nothing is written until the first save")
+	}
+}
+
+// html-editor notes  →  ./notes/index.html, folder and file created on save.
+func TestFolderShorthand(t *testing.T) {
+	root := t.TempDir()
+	target := filepath.Join(root, "recipes")
+
+	doc, err := OpenDocument(target)
+	if err != nil {
+		t.Fatalf("OpenDocument: %v", err)
+	}
+	if doc.Name != defaultFileName {
+		t.Errorf("expected the folder index, got %q", doc.Name)
+	}
+	if doc.Dir != target {
+		t.Errorf("expected the document to live in %q, got %q", target, doc.Dir)
+	}
+	if !doc.Pending() {
+		t.Error("the folder does not exist yet, so the document is pending")
+	}
+	if _, err := os.Stat(target); !os.IsNotExist(err) {
+		t.Fatal("the folder must not be created before the first save")
+	}
+
+	// The unsaved skeleton is named after the folder, not after "index".
+	content, err := doc.Read()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(content, "<title>Recipes</title>") {
+		t.Errorf("expected the folder name as title:\n%s", content)
+	}
+
+	if err := doc.Write("<html><body>saved</body></html>"); err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(target, defaultFileName)); err != nil {
+		t.Errorf("saving should have created folder and file: %v", err)
+	}
+	if doc.Pending() {
+		t.Error("after saving, the document is no longer pending")
+	}
+}
+
+func TestTargetResolution(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "existing-folder"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "existing-file"), []byte("<p>x</p>"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cases := map[string]string{
+		"page.html":             "page.html",        // extension: a file
+		"notes":                 "notes/index.html", // no extension: a folder
+		"notes/":                "notes/index.html", // explicit folder
+		"existing-folder":       "existing-folder/index.html",
+		"existing-file":         "existing-file", // an existing file wins
+		"deep/nested/page.html": "deep/nested/page.html",
+		"archive.backup":        "archive.backup", // any extension is a file
+	}
+	for input, want := range cases {
+		doc, err := OpenDocument(filepath.Join(root, input))
+		if err != nil {
+			t.Fatalf("OpenDocument(%q): %v", input, err)
+		}
+		got, err := filepath.Rel(root, doc.Path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if filepath.ToSlash(got) != want {
+			t.Errorf("OpenDocument(%q) resolved to %q, want %q", input, filepath.ToSlash(got), want)
+		}
+	}
+}
+
+func TestEnsureFolderCreatesTheDocumentFolder(t *testing.T) {
+	root := t.TempDir()
+	doc, err := OpenDocument(filepath.Join(root, "gallery"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := doc.EnsureFolder(); err != nil {
+		t.Fatalf("EnsureFolder: %v", err)
+	}
+	info, err := os.Stat(filepath.Join(root, "gallery"))
+	if err != nil || !info.IsDir() {
+		t.Errorf("the folder should exist so an asset can be stored before the first save: %v", err)
 	}
 }
 

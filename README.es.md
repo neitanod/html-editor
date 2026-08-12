@@ -51,10 +51,19 @@ html-editor [OPCIONES] [ARCHIVO]
 | `html-editor` | edita `index.html` en la carpeta actual |
 | `html-editor about.html` | edita ese archivo |
 | `html-editor docs/guia.html` | edita un archivo en otra carpeta |
+| `html-editor recetas` | edita `recetas/index.html` |
 
-Si el archivo no existe se crea con el esqueleto completo: `<!DOCTYPE html>`,
-`<html lang>`, un `<head>` con charset, viewport y título, y una hoja de estilos
-por defecto legible.
+**Un nombre con extensión es un archivo; uno sin extensión es una carpeta**, y
+lo que se edita es su `index.html`. Ese es el atajo para mantener cada documento
+junto con sus imágenes: todo lo que pegás cae en esa misma carpeta, así se puede
+publicar, comprimir o mover como una unidad.
+
+Un documento que todavía no existe abre con el esqueleto completo: `<!DOCTYPE
+html>`, `<html lang>`, un `<head>` con charset, viewport y título, y una hoja de
+estilos por defecto legible. No se escribe nada hasta que guardás: ahí se crean
+la carpeta y el archivo, así que abrir un nombre para probar y cerrar la pestaña
+no deja rastro. Un `index.html` sin guardar toma el título del nombre de la
+carpeta.
 
 ### Opciones
 

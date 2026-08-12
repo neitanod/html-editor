@@ -48,10 +48,18 @@ html-editor [OPTIONS] [FILE]
 | `html-editor` | edits `index.html` in the current folder |
 | `html-editor about.html` | edits that file |
 | `html-editor docs/guide.html` | edits a file in another folder |
+| `html-editor recipes` | edits `recipes/index.html` |
 
-If the file does not exist it is created with a complete skeleton: `<!DOCTYPE
+**A name with an extension is a file; a name without one is a folder**, and its
+`index.html` is what gets edited. That is the shorthand for keeping a document
+together with its images: everything you paste lands in that same folder, so it
+can be published, zipped or moved as a unit.
+
+A document that does not exist yet opens on a complete skeleton — `<!DOCTYPE
 html>`, `<html lang>`, a `<head>` with charset, viewport and title, and a
-readable default stylesheet.
+readable default stylesheet. Nothing is written until you save: the folder and
+the file are created then, so opening a name to try it out and closing the tab
+leaves no trace. An unsaved `index.html` takes its title from the folder name.
 
 ### Options
 

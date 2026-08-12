@@ -443,10 +443,22 @@
     };
   }
 
+  // A document opened by name may not be on disk yet: it is created, folder
+  // and all, on the first save. Saying so up front avoids the surprise of
+  // closing the tab and finding nothing there.
+  function announceIfPending() {
+    fetch('/api/document').then(function (res) { return res.json(); }).then(function (data) {
+      if (!data.pending) { return; }
+      HE.pending = true;
+      HE.toast(HE.t('doc.pending', 'This document does not exist yet: it is created, with its folder, when you save'), 'info');
+    }).catch(function () { /* the editor works regardless */ });
+  }
+
   window.addEventListener('load', function () {
     navigator.sendBeacon && navigator.sendBeacon('/api/open');
     connectStream();
     loadDocument();
+    announceIfPending();
   });
 
   window.addEventListener('pageshow', function (event) {

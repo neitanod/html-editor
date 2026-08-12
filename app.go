@@ -113,6 +113,19 @@ func (a *App) handleDocFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// A document that has not been saved yet is served from the skeleton it
+	// will be created with, so the editor can open a name that is not on disk.
+	if target == a.doc.Path && a.doc.Pending() {
+		content, err := a.doc.Read()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, parkScripts(content))
+		return
+	}
+
 	info, err := os.Stat(target)
 	if err != nil {
 		http.NotFound(w, r)
@@ -172,6 +185,7 @@ func (a *App) handleDocument(w http.ResponseWriter, r *http.Request) {
 			"content":  content,
 			"modified": a.doc.ModTime().Format(time.RFC3339),
 			"readOnly": a.opts.ReadOnly,
+			"pending":  a.doc.Pending(),
 			"version":  a.opts.Version,
 		})
 	case http.MethodPost:
@@ -227,6 +241,10 @@ func (a *App) handleAssets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := a.doc.EnsureFolder(); err != nil {
+		writeJSONError(w, http.StatusInternalServerError, err)
+		return
+	}
 	name := uniqueAssetName(a.doc.Dir, payload.Name, payload.Mime)
 	if err := os.WriteFile(filepath.Join(a.doc.Dir, name), raw, 0o644); err != nil {
 		writeJSONError(w, http.StatusInternalServerError, err)
@@ -245,6 +263,11 @@ func (a *App) handleAssets(w http.ResponseWriter, r *http.Request) {
 func (a *App) handleFolder(w http.ResponseWriter, r *http.Request) {
 	entries, err := os.ReadDir(a.doc.Dir)
 	if err != nil {
+		if os.IsNotExist(err) {
+			// The folder appears with the first save; until then it is empty.
+			writeJSON(w, http.StatusOK, map[string]any{"dir": a.doc.Dir, "images": []any{}})
+			return
+		}
 		writeJSONError(w, http.StatusInternalServerError, err)
 		return
 	}
