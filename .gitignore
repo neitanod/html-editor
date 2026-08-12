@@ -1,0 +1,9 @@
+# Compiled binary (built locally with `make` or `go build`)
+/html-editor
+
+# Backups the editor keeps next to an edited document
+*.html.bak
+
+# Editor and OS noise
+*.swp
+.DS_Store

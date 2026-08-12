@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en" data-file="{{FILE_NAME}}" data-path="{{FILE_PATH}}" data-version="{{VERSION}}" data-read-only="{{READ_ONLY}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{FILE_NAME}} — html-editor</title>
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/css/editor.css">
+</head>
+<body>
+
+<header class="chrome">
+  <div class="chrome__identity">
+    <svg class="chrome__mark" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M8.5 4.5 3 12l5.5 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M15.5 4.5 21 12l-5.5 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M13.5 3.5 10.5 20.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <div class="chrome__file">
+      <span class="chrome__name" id="file-name">{{FILE_NAME}}</span>
+      <span class="chrome__path" id="file-path" title="{{FILE_PATH}}">{{FILE_PATH}}</span>
+    </div>
+    <span class="chrome__dirty" id="dirty-dot" hidden></span>
+  </div>
+
+  <div class="chrome__actions">
+    <button class="btn btn--ghost" id="btn-undo" data-i18n-title="toolbar.undo" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 9h9a7 7 0 0 1 0 14h-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="btn btn--ghost" id="btn-redo" data-i18n-title="toolbar.redo" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 9h-9a7 7 0 0 0 0 14h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <span class="chrome__sep"></span>
+    <button class="btn btn--ghost" id="btn-doc-settings" type="button" data-i18n-title="toolbar.docSettings">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.8v2.6M12 18.6v2.6M21.2 12h-2.6M5.4 12H2.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8M18.5 18.5l-1.8-1.8M7.3 7.3 5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span data-i18n="toolbar.docSettingsShort">Document</span>
+    </button>
+    <button class="btn btn--ghost" id="btn-source" type="button" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6 4 12l5 6M15 6l5 6-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span data-i18n="toolbar.source">Source</span>
+    </button>
+    <button class="btn btn--primary" id="btn-save" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 4v5h7V4M8 20v-6h8v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      <span data-i18n="toolbar.save">Save</span>
+    </button>
+    <button class="btn btn--ghost btn--icon" id="btn-lang" type="button" title="ES / EN">
+      <span id="lang-label">EN</span>
+    </button>
+  </div>
+</header>
+
+<nav class="toolbar" id="toolbar" aria-label="Formatting">
+  <div class="toolbar__group">
+    <select class="ctl ctl--select" id="ctl-block" data-i18n-title="toolbar.block">
+      <option value="p" data-i18n="block.p">Paragraph</option>
+      <option value="h1">Heading 1</option>
+      <option value="h2">Heading 2</option>
+      <option value="h3">Heading 3</option>
+      <option value="h4">Heading 4</option>
+      <option value="h5">Heading 5</option>
+      <option value="h6">Heading 6</option>
+      <option value="blockquote" data-i18n="block.quote">Quote</option>
+      <option value="pre" data-i18n="block.pre">Preformatted</option>
+      <option value="div">Div</option>
+    </select>
+    <select class="ctl ctl--select" id="ctl-font" data-i18n-title="toolbar.font">
+      <option value="" data-i18n="font.inherit">Font</option>
+    </select>
+    <select class="ctl ctl--select ctl--narrow" id="ctl-size" data-i18n-title="toolbar.size">
+      <option value="" data-i18n="size.default">Size</option>
+    </select>
+  </div>
+
+  <div class="toolbar__group">
+    <button class="btn btn--tool" data-cmd="bold" data-i18n-title="toolbar.bold" type="button"><b>B</b></button>
+    <button class="btn btn--tool" data-cmd="italic" data-i18n-title="toolbar.italic" type="button"><i>I</i></button>
+    <button class="btn btn--tool" data-cmd="underline" data-i18n-title="toolbar.underline" type="button"><u>U</u></button>
+    <button class="btn btn--tool" data-cmd="strikeThrough" data-i18n-title="toolbar.strike" type="button"><s>S</s></button>
+    <button class="btn btn--tool" data-cmd="removeFormat" data-i18n-title="toolbar.clear" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 6h12M10 6 8 19M14 6l-1 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="m15 15 5 5m0-5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <label class="btn btn--tool btn--color" data-i18n-title="toolbar.textColor">
+      <span class="swatch" id="swatch-fore" style="--swatch:#1c1c1e">A</span>
+      <input type="color" id="ctl-fore" value="#1c1c1e">
+    </label>
+    <label class="btn btn--tool btn--color" data-i18n-title="toolbar.highlight">
+      <span class="swatch swatch--fill" id="swatch-back" style="--swatch:#ffe066">A</span>
+      <input type="color" id="ctl-back" value="#ffe066">
+    </label>
+  </div>
+
+  <div class="toolbar__group">
+    <button class="btn btn--tool" data-cmd="justifyLeft" data-i18n-title="toolbar.alignLeft" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 11h10M4 16h16M4 21h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <button class="btn btn--tool" data-cmd="justifyCenter" data-i18n-title="toolbar.alignCenter" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 11h10M4 16h16M7 21h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <button class="btn btn--tool" data-cmd="justifyRight" data-i18n-title="toolbar.alignRight" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M10 11h10M4 16h16M10 21h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <button class="btn btn--tool" data-cmd="justifyFull" data-i18n-title="toolbar.alignJustify" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 11h16M4 16h16M4 21h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <button class="btn btn--tool" data-cmd="insertUnorderedList" data-i18n-title="toolbar.bullets" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="7" r="1.6" fill="currentColor"/><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="5" cy="17" r="1.6" fill="currentColor"/><path d="M10 7h10M10 12h10M10 17h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <button class="btn btn--tool" data-cmd="insertOrderedList" data-i18n-title="toolbar.numbers" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 7h10M10 12h10M10 17h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><text x="2.4" y="9" font-size="7" fill="currentColor">1</text><text x="2.4" y="14.6" font-size="7" fill="currentColor">2</text><text x="2.4" y="20" font-size="7" fill="currentColor">3</text></svg>
+    </button>
+    <button class="btn btn--tool" data-cmd="outdent" data-i18n-title="toolbar.outdent" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 7h9M11 12h9M11 17h9M4 7h3M4 12h3M4 17h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="m8 9-2.5 3L8 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="btn btn--tool" data-cmd="indent" data-i18n-title="toolbar.indent" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 7h9M11 12h9M11 17h9M4 7h3M4 17h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="m5 9 2.5 3L5 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+
+  <div class="toolbar__group">
+    <button class="btn btn--tool" id="btn-link" data-i18n-title="toolbar.link" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l2.6-2.6a4.5 4.5 0 1 0-6.4-6.4L11.4 6.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0L5 12.6a4.5 4.5 0 1 0 6.4 6.4l1.2-1.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <button class="btn btn--tool" id="btn-image" data-i18n-title="toolbar.image" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="10" r="1.7" fill="currentColor"/><path d="m5 17 4.5-4.5L13 16l3-2.5 3 3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="btn btn--tool" id="btn-table" data-i18n-title="toolbar.table" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 9.6h17M3.5 14.3h17M9.8 5v14M15 5v14" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+    </button>
+    <button class="btn btn--tool" id="btn-hr" data-i18n-title="toolbar.hr" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6 7h12M6 17h12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" opacity=".45"/></svg>
+    </button>
+    <button class="btn btn--tool" id="btn-special" data-i18n-title="toolbar.symbol" type="button">Ω</button>
+  </div>
+</nav>
+
+<main class="stage" id="stage">
+  <section class="canvas" id="canvas">
+    <div class="canvas__scroll" id="canvas-scroll">
+      <iframe class="canvas__frame" id="frame" title="Document" src="about:blank"></iframe>
+    </div>
+    <div class="layer" id="layer"></div>
+  </section>
+
+  <div class="splitter" id="splitter" hidden role="separator" aria-orientation="vertical"></div>
+
+  <section class="source" id="source" hidden>
+    <header class="source__head">
+      <span class="source__title" data-i18n="source.title">Source</span>
+      <div class="source__tools">
+        <button class="btn btn--ghost btn--sm" id="btn-format" data-i18n="source.format" type="button">Format</button>
+        <button class="btn btn--ghost btn--sm" id="btn-apply" data-i18n="source.apply" type="button">Apply</button>
+        <button class="btn btn--ghost btn--sm btn--icon" id="btn-source-close" title="Close">✕</button>
+      </div>
+    </header>
+    <div class="source__body">
+      <div class="source__gutter" id="source-gutter" aria-hidden="true"></div>
+      <div class="source__editor">
+        <pre class="source__highlight" id="source-highlight" aria-hidden="true"></pre>
+        <textarea class="source__input" id="source-input" spellcheck="false" wrap="off"></textarea>
+      </div>
+    </div>
+    <footer class="source__foot">
+      <span id="source-status" data-i18n="source.hint">Edit the source and press Apply (Ctrl+Enter)</span>
+    </footer>
+  </section>
+</main>
+
+<footer class="status">
+  <span class="status__crumbs" id="crumbs"></span>
+  <span class="status__spacer"></span>
+  <span class="status__item" id="status-selection"></span>
+  <span class="status__item" id="status-doc"></span>
+</footer>
+
+<div class="menu" id="context-menu" hidden role="menu"></div>
+<div class="popover" id="popover" hidden></div>
+<div class="modal-root" id="modal-root" hidden></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="/static/js/core.js"></script>
+<script src="/static/js/source.js"></script>
+<script src="/static/js/props.js"></script>
+<script src="/static/js/tables.js"></script>
+<script src="/static/js/overlays.js"></script>
+<script src="/static/js/contextmenu.js"></script>
+<script src="/static/js/toolbar.js"></script>
+<script src="/static/js/boot.js"></script>
+</body>
+</html>
