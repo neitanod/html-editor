@@ -92,6 +92,7 @@
     d.addEventListener('keyup', function (event) {
       if (event.key === ' ' || event.key === 'Enter') { linkifyBeforeCaret(); }
     });
+    d.addEventListener('keydown', deleteSelectedObject);
     d.addEventListener('paste', handlePaste, true);
     d.addEventListener('drop', handleDrop, true);
     d.addEventListener('dragover', function (event) {
@@ -158,6 +159,25 @@
         HE.exec('insertHTML', '<a href="' + escapeAttr(text) + '">' + escapeText(label) + '</a>');
       });
     }
+  }
+
+  // Selecting an image or a rule and pressing Delete removes it. Without this
+  // the caret is nowhere near the element and the key does nothing, which reads
+  // as the editor ignoring you.
+  var DELETABLE = ['IMG', 'HR', 'VIDEO', 'AUDIO', 'IFRAME', 'SVG', 'CANVAS'];
+
+  function deleteSelectedObject(event) {
+    if (event.key !== 'Delete' && event.key !== 'Backspace') { return; }
+    var element = HE.selected;
+    if (!element || DELETABLE.indexOf(element.tagName) === -1) { return; }
+    var selection = HE.win().getSelection();
+    if (selection && selection.rangeCount && !selection.isCollapsed) { return; }
+    event.preventDefault();
+    HE.edit(function () {
+      var parent = element.parentElement;
+      element.remove();
+      HE.select(parent);
+    });
   }
 
   // Typing an address and pressing space (or Enter) turns it into a link, the
