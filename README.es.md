@@ -87,6 +87,15 @@ relativa (`<img src="foto.png">`), nunca como un data URL de varios megas.
 Arrastrás los tiradores para redimensionarla: mantiene el aspect ratio salvo que
 tengas *Shift* apretado.
 
+**El contenido pegado de la web puede traerse sus imágenes.** Cuando lo que
+pegás enlaza imágenes alojadas en otro sitio, el editor pregunta si lo querés
+pegar tal cual o bajar esos recursos: se guardan junto al documento y se
+enlazan de forma relativa, así la carpeta no depende de un sitio que no
+controlás. Cubre `src`, `srcset`, `poster` y las `url()` de los estilos inline,
+y el mismo comando está disponible para todo el documento desde el menú
+contextual del fondo (*Descargar los recursos externos*). Un recurso que no se
+puede bajar conserva su dirección original en vez de romper el resto.
+
 **Enlaces que se pueden editar.** Hacés click en un enlace y aparece un panel
 arriba o abajo —donde entre— con el texto legible, la dirección, un interruptor
 de "pestaña nueva", un botón para *quitar el enlace* y otro para *abrirlo* en

@@ -81,6 +81,15 @@ written next to the document with a unique name and referenced relatively
 (`<img src="photo.png">`) — never as a multi-megabyte data URL. Drag the handles
 to resize it: the aspect ratio is preserved unless you hold *Shift*.
 
+**Content pasted from the web can bring its images along.** When what you paste
+links images hosted on another site, the editor asks whether to paste it as is
+or to download those resources: they are stored next to the document and
+relinked relatively, so the folder does not depend on a site you do not control.
+It covers `src`, `srcset`, `poster` and the `url()` of inline styles, and the
+same command is available for the whole document from the background
+context menu (*Download external resources*). A resource that cannot be
+downloaded keeps its original address instead of breaking the rest.
+
 **Links you can actually edit.** Click a link and a panel appears above or below
 it — whichever fits — with the readable text, the address, a "new tab" toggle, a
 *Remove link* button and an *Open* button that follows it in another tab.

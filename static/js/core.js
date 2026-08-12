@@ -47,6 +47,20 @@
       'source.hint': 'Edit the source and press Apply (Ctrl+Enter)',
       'source.applied': 'Source applied to the document',
       'source.invalid': 'The source could not be parsed',
+      // -- external resources ---------------------------------------------
+      'assets.askTitle': 'Paste with external resources',
+      'assets.askIntro': 'What you are pasting links ',
+      'assets.askIntroTail': ' resources hosted on other sites.',
+      'assets.askHint': 'Downloading them keeps the folder self-contained: the files land next to the document and are linked relatively.',
+      'assets.remember': 'Remember my choice for this session',
+      'assets.pastePlain': 'Paste as is', 'assets.pasteDownload': 'Download and link them',
+      'assets.localizeDocument': 'Download external resources…',
+      'assets.downloading': 'Downloading resources… ',
+      'assets.stored': 'Stored ', 'assets.storedTail': ' resources next to the document',
+      'assets.someFailed': 'Downloaded ',
+      'assets.someFailedTail': ' resources; the rest kept their original address',
+      'assets.noneFound': 'No external resources to download',
+      'assets.failed': 'Could not download the resources: ',
       'source.unappliedTitle': 'Unapplied source changes',
       'source.unappliedBody': 'The source panel has changes you did not apply. Apply them before jumping to the element?',
       'common.discard': 'Discard',
@@ -153,6 +167,20 @@
       'source.hint': 'Editá el código y apretá Aplicar (Ctrl+Enter)',
       'source.applied': 'Código aplicado al documento',
       'source.invalid': 'No se pudo interpretar el código',
+      // -- recursos externos ------------------------------------------------
+      'assets.askTitle': 'Pegar contenido con recursos externos',
+      'assets.askIntro': 'Lo que estás pegando enlaza ',
+      'assets.askIntroTail': ' recursos alojados en otros sitios.',
+      'assets.askHint': 'Si los bajás, la carpeta queda completa: los archivos se guardan junto al documento y se enlazan de forma relativa.',
+      'assets.remember': 'Recordar mi elección en esta sesión',
+      'assets.pastePlain': 'Pegar tal cual', 'assets.pasteDownload': 'Bajarlos y enlazarlos',
+      'assets.localizeDocument': 'Descargar los recursos externos…',
+      'assets.downloading': 'Descargando recursos… ',
+      'assets.stored': 'Se guardaron ', 'assets.storedTail': ' recursos junto al documento',
+      'assets.someFailed': 'Se bajaron ',
+      'assets.someFailedTail': ' recursos; el resto quedó con su dirección original',
+      'assets.noneFound': 'No hay recursos externos para descargar',
+      'assets.failed': 'No se pudieron descargar los recursos: ',
       'source.unappliedTitle': 'Cambios sin aplicar en el código',
       'source.unappliedBody': 'El panel de código tiene cambios que no aplicaste. ¿Los aplico antes de saltar al elemento?',
       'common.discard': 'Descartar',
@@ -498,6 +526,15 @@
     clone.querySelectorAll('[data-html-editor-ui]').forEach(function (node) { node.remove(); });
     EDITOR_ATTRS.forEach(function (attr) {
       clone.querySelectorAll('[' + attr + ']').forEach(function (node) { node.removeAttribute(attr); });
+    });
+    // Any other bookkeeping a module left behind goes too. data-he-raw is the
+    // exception: the pretty printer needs it and strips it itself.
+    clone.querySelectorAll('*').forEach(function (node) {
+      Array.prototype.slice.call(node.attributes).forEach(function (attr) {
+        if (attr.name.indexOf('data-he-') === 0 && attr.name !== 'data-he-raw') {
+          node.removeAttribute(attr.name);
+        }
+      });
     });
     clone.querySelectorAll('[class]').forEach(function (node) {
       var kept = node.getAttribute('class').split(/\s+/).filter(function (c) {

@@ -56,6 +56,7 @@ func (a *App) Routes() http.Handler {
 	mux.HandleFunc("/api/stream", a.handleSSE)
 	mux.HandleFunc("/api/document", a.handleDocument)
 	mux.HandleFunc("/api/assets", a.handleAssets)
+	mux.HandleFunc("/api/fetch-asset", a.handleFetchAsset)
 	mux.HandleFunc("/api/folder", a.handleFolder)
 	mux.HandleFunc("/api/open", a.handleOpen)
 	mux.HandleFunc("/api/close", a.handleClose)

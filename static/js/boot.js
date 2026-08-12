@@ -157,6 +157,15 @@
     // an address over a selection or on an empty line.
     var text = (data.getData('text/plain') || '').trim();
     var html = data.getData('text/html');
+
+    // Content copied from a web page keeps pointing at that site's images;
+    // the assets module offers to bring them along.
+    if (html && HE.assets && HE.assets.hasRemoteResources(html)) {
+      event.preventDefault();
+      HE.assets.handlePastedHTML(html);
+      return;
+    }
+
     if (!html && /^https?:\/\/\S+$/i.test(text)) {
       event.preventDefault();
       HE.edit(function () {

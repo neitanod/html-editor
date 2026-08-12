@@ -1391,3 +1391,29 @@ body.is-resizing { cursor: nwse-resize; user-select: none; }
   color: var(--text-dim);
   letter-spacing: .04em;
 }
+
+/* --------------------------------------------------- external resources -- */
+
+.assets-ask__text {
+  margin: 0 0 .5rem;
+  font-size: 14px;
+}
+
+.assets-ask__hint {
+  margin: 0 0 .9rem;
+  color: var(--text-dim);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.assets-ask__remember {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  color: var(--text-dim);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.assets-ask__remember input[type="checkbox"] { accent-color: var(--amber); cursor: pointer; }
+.assets-ask__remember:hover { color: var(--text); }
+.assets-ask__remember input:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
