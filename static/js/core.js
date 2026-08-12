@@ -359,7 +359,9 @@
 
   HE.save = function () {
     if (HE.readOnly) { HE.toast(HE.t('save.readonly'), 'warn'); return Promise.resolve(false); }
-    var content = HE.serialize();
+    // The browser serialises everything on very few lines; the file on disk is
+    // meant to stay readable, so it is re-indented before it is written.
+    var content = HE.formatHTML ? HE.formatHTML(HE.serialize()) : HE.serialize();
     return fetch('/api/document', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

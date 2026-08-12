@@ -116,6 +116,9 @@ func main() {
 	if !*serve && !*noBrowser {
 		time.AfterFunc(150*time.Millisecond, func() { openBrowser(url) })
 	}
+	if !*serve {
+		app.clients.ArmStartupTimeout(startupGrace)
+	}
 
 	server := &http.Server{
 		Handler:           app.Routes(),

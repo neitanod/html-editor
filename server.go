@@ -19,6 +19,7 @@ var embeddedFS embed.FS
 
 const (
 	shutdownGrace   = 5 * time.Second
+	startupGrace    = 90 * time.Second
 	firstProbedPort = 8477
 	portProbes      = 50
 )
@@ -27,11 +28,12 @@ const (
 // process exits after a short grace period, which is what makes the tool feel
 // like a desktop app: close the tab, the command finishes.
 type ClientTracker struct {
-	mu      sync.Mutex
-	count   int
-	timer   *time.Timer
-	serve   bool
-	stopped bool
+	mu            sync.Mutex
+	count         int
+	timer         *time.Timer
+	serve         bool
+	stopped       bool
+	everConnected bool
 }
 
 func NewClientTracker(serve bool) *ClientTracker {
@@ -42,7 +44,27 @@ func (ct *ClientTracker) Add() {
 	ct.mu.Lock()
 	defer ct.mu.Unlock()
 	ct.count++
+	ct.everConnected = true
 	ct.cancelLocked()
+}
+
+// ArmStartupTimeout exits when no browser ever shows up, so a failed xdg-open
+// does not leave an orphan process holding a port.
+func (ct *ClientTracker) ArmStartupTimeout(grace time.Duration) {
+	ct.mu.Lock()
+	defer ct.mu.Unlock()
+	if ct.serve {
+		return
+	}
+	time.AfterFunc(grace, func() {
+		ct.mu.Lock()
+		orphan := !ct.everConnected && ct.count == 0
+		ct.mu.Unlock()
+		if orphan {
+			log.Println("no browser connected, exiting")
+			os.Exit(0)
+		}
+	})
 }
 
 func (ct *ClientTracker) Remove() {
