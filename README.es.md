@@ -63,6 +63,7 @@ por defecto legible.
 | `--serve` | Modo servidor: no abre el navegador ni se cierra solo — sirve para systemd |
 | `--read-only` | Deshabilita todos los endpoints de escritura |
 | `--no-browser` | Arranca normal pero sin abrir el navegador |
+| `--dev <dir>` | Sirve la UI desde una carpeta de código en vez de la copia embebida |
 | `--version` | Muestra la versión |
 
 ## Qué hace

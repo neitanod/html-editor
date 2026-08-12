@@ -60,6 +60,7 @@ readable default stylesheet.
 | `--serve` | Server mode: no browser, no auto-exit — good for a systemd unit |
 | `--read-only` | Every write endpoint is disabled |
 | `--no-browser` | Start normally but do not open the browser |
+| `--dev <dir>` | Serve the UI from a source folder instead of the embedded copy |
 | `--version` | Print version information |
 
 ## What it does

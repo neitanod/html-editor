@@ -89,6 +89,9 @@
     });
 
     d.addEventListener('keydown', function (event) { handleShortcut(event, true); });
+    d.addEventListener('keyup', function (event) {
+      if (event.key === ' ' || event.key === 'Enter') { linkifyBeforeCaret(); }
+    });
     d.addEventListener('paste', handlePaste, true);
     d.addEventListener('drop', handleDrop, true);
     d.addEventListener('dragover', function (event) {
@@ -155,6 +158,46 @@
         HE.exec('insertHTML', '<a href="' + escapeAttr(text) + '">' + escapeText(label) + '</a>');
       });
     }
+  }
+
+  // Typing an address and pressing space (or Enter) turns it into a link, the
+  // same way pasting one does. Only the word just finished is considered.
+  var URL_AT_END = /(^|[\s(])((?:https?:\/\/|www\.)[^\s<>"']+[^\s<>"'.,;:!?)])[\s]$/i;
+
+  function linkifyBeforeCaret() {
+    var d = HE.doc();
+    var win = HE.win();
+    var selection = win.getSelection();
+    if (!selection || !selection.rangeCount || !selection.isCollapsed) { return; }
+
+    var node = selection.anchorNode;
+    if (!node || node.nodeType !== 3) { return; }
+    if (node.parentElement && node.parentElement.closest('a')) { return; }
+
+    var text = node.textContent.slice(0, selection.anchorOffset);
+    var match = URL_AT_END.exec(text);
+    if (!match) { return; }
+
+    var url = match[2];
+    var start = text.length - url.length - 1;
+    if (start < 0) { return; }
+
+    HE.edit(function () {
+      var range = d.createRange();
+      range.setStart(node, start);
+      range.setEnd(node, start + url.length);
+      var anchor = d.createElement('a');
+      anchor.setAttribute('href', /^www\./i.test(url) ? 'https://' + url : url);
+      anchor.textContent = url;
+      range.deleteContents();
+      range.insertNode(anchor);
+
+      var after = d.createRange();
+      after.setStartAfter(anchor);
+      after.collapse(true);
+      selection.removeAllRanges();
+      selection.addRange(after);
+    });
   }
 
   function handleDrop(event) {
