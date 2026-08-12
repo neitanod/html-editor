@@ -20,6 +20,9 @@ type Options struct {
 	ReadOnly bool
 	Serve    bool
 	Version  string
+	// DevRoot serves the UI assets from this folder instead of the embedded
+	// copy, so the interface can be edited without rebuilding the binary.
+	DevRoot string
 }
 
 // App wires the document, the runtime options and the SSE client tracker that
@@ -37,11 +40,16 @@ func NewApp(doc *Document, opts *Options) *App {
 func (a *App) Routes() http.Handler {
 	mux := http.NewServeMux()
 
-	staticFS, err := fs.Sub(embeddedFS, "static")
-	if err != nil {
-		log.Fatalf("html-editor: cannot mount static assets: %v", err)
+	if a.opts.DevRoot != "" {
+		mux.Handle("/static/", http.StripPrefix("/static/",
+			http.FileServer(http.Dir(filepath.Join(a.opts.DevRoot, "static")))))
+	} else {
+		staticFS, err := fs.Sub(embeddedFS, "static")
+		if err != nil {
+			log.Fatalf("html-editor: cannot mount static assets: %v", err)
+		}
+		mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
 	}
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
 
 	mux.HandleFunc("/", a.handleShell)
 	mux.HandleFunc("/doc/", a.handleDocFiles)
@@ -68,7 +76,13 @@ func (a *App) handleShell(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	page, err := embeddedFS.ReadFile("templates/index.html")
+	var page []byte
+	var err error
+	if a.opts.DevRoot != "" {
+		page, err = os.ReadFile(filepath.Join(a.opts.DevRoot, "templates", "index.html"))
+	} else {
+		page, err = embeddedFS.ReadFile("templates/index.html")
+	}
 	if err != nil {
 		http.Error(w, "UI template missing", http.StatusInternalServerError)
 		return

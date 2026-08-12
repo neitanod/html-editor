@@ -43,6 +43,7 @@ OPTIONS:
     --serve           Server mode: do not open the browser, never auto-exit
     --read-only       Disable every write endpoint (view only)
     --no-browser      Start normally but do not open the browser
+    --dev <dir>       Serve the UI from a source folder (development)
     --version         Print version information
     --help            Show this help
 
@@ -66,6 +67,7 @@ func main() {
 		serve       = flag.Bool("serve", false, "server mode: no browser, no auto-exit")
 		readOnly    = flag.Bool("read-only", false, "disable write endpoints")
 		noBrowser   = flag.Bool("no-browser", false, "do not open the browser")
+		devRoot     = flag.String("dev", "", "serve the UI from this source folder instead of the embedded copy")
 		showVersion = flag.Bool("version", false, "print version information")
 	)
 	flag.Parse()
@@ -103,6 +105,7 @@ func main() {
 		ReadOnly: *readOnly,
 		Serve:    *serve,
 		Version:  Version,
+		DevRoot:  *devRoot,
 	})
 
 	url := fmt.Sprintf("http://%s:%d/", displayHost(bind), actualPort)

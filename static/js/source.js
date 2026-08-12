@@ -131,37 +131,52 @@
     return out;
   }
 
-  function formatTokens(tokens) {
-    var lines = [];
-    var depth = 0;
-    var buf = ''; /* pending inline flow (text + inline tags) */
+  /* Structural elements that always get the multi-line treatment, so the
+   * document skeleton is one landmark per line even when nearly empty. */
+  var FORCE_BLOCK = { html: 1, head: 1, body: 1 };
 
-    function flush() {
-      var trimmed = buf.replace(/^\s+/, '').replace(/\s+$/, '');
-      buf = '';
-      if (trimmed) { lines.push(pad(depth) + trimmed); }
+  /** Allows at most one consecutive blank line (used on comment bodies;
+   *  raw-text element content is never passed through here). */
+  function collapseBlankLines(text) {
+    var parts = text.split('\n');
+    var out = [];
+    var blanks = 0;
+    for (var i = 0; i < parts.length; i++) {
+      if (/^\s*$/.test(parts[i])) {
+        blanks++;
+        if (blanks <= 1) { out.push(parts[i]); }
+      } else {
+        blanks = 0;
+        out.push(parts[i]);
+      }
     }
+    return out.join('\n');
+  }
+
+  /**
+   * Builds a light tree from the flat tokens. Raw-text elements are folded
+   * into a single verbatim 'raw' node (open tag + exact content + close tag).
+   * Unmatched close tags become 'closetag' leaves so nothing is dropped.
+   */
+  function buildTree(tokens) {
+    var root = { type: 'el', tag: '#root', openRaw: '', closeRaw: '', children: [] };
+    var stack = [root];
 
     for (var i = 0; i < tokens.length; i++) {
       var tok = tokens[i];
+      var parent = stack[stack.length - 1];
 
-      if (tok.type === 'text') {
-        buf += tok.raw.replace(/\s+/g, ' ');
-
-      } else if (tok.type === 'comment' || tok.type === 'doctype') {
-        flush();
-        lines.push(pad(depth) + tok.raw);
+      if (tok.type === 'text' || tok.type === 'comment' || tok.type === 'doctype') {
+        parent.children.push({ type: tok.type, raw: tok.raw });
 
       } else if (tok.type === 'rawtext') {
         /* Orphan raw text (normally consumed with its opening tag below). */
-        flush();
-        lines.push(tok.raw);
+        parent.children.push({ type: 'raw', raw: tok.raw });
 
       } else if (tok.type === 'open') {
         if (RAW_TAGS[tok.name] && !tok.selfClosing) {
-          /* Emit open tag + verbatim content + close tag with zero added
-           * whitespace, so <pre>/<textarea>/<script>/<style> never change. */
-          flush();
+          /* Zero added whitespace around the verbatim content, so
+           * <pre>/<textarea>/<script>/<style> never change. */
           var assembled = tok.raw;
           var k = i + 1;
           if (k < tokens.length && tokens[k].type === 'rawtext') {
@@ -172,27 +187,110 @@
             assembled += tokens[k].raw;
             k++;
           }
-          lines.push(pad(depth) + assembled);
+          parent.children.push({ type: 'raw', raw: assembled });
           i = k - 1;
-        } else if (INLINE_TAGS[tok.name]) {
-          buf += tok.raw;
         } else {
-          flush();
-          lines.push(pad(depth) + tok.raw);
-          if (!VOID_TAGS[tok.name] && !tok.selfClosing) { depth++; }
+          var node = { type: 'el', tag: tok.name, openRaw: tok.raw, closeRaw: '', children: [] };
+          parent.children.push(node);
+          if (!VOID_TAGS[tok.name] && !tok.selfClosing) { stack.push(node); }
         }
 
       } else if (tok.type === 'close') {
-        if (INLINE_TAGS[tok.name]) {
-          buf += tok.raw;
+        var at = -1;
+        for (var s = stack.length - 1; s >= 1; s--) {
+          if (stack[s].tag === tok.name) { at = s; break; }
+        }
+        if (at === -1) {
+          parent.children.push({ type: 'closetag', raw: tok.raw });
         } else {
-          flush();
-          if (depth > 0) { depth--; }
-          lines.push(pad(depth) + tok.raw);
+          /* Implicitly closes anything left open above the match. */
+          stack[at].closeRaw = tok.raw;
+          stack.length = at;
         }
       }
     }
-    flush();
+    return root;
+  }
+
+  /** True when the node renders as part of the surrounding text flow:
+   *  a text node, or an inline element whose whole subtree is inline. */
+  function isInlineOnly(node) {
+    if (node.type === 'text') { return true; }
+    if (node.type !== 'el' || !INLINE_TAGS[node.tag]) { return false; }
+    for (var i = 0; i < node.children.length; i++) {
+      if (!isInlineOnly(node.children[i])) { return false; }
+    }
+    return true;
+  }
+
+  function hasOnlyInlineContent(node) {
+    for (var i = 0; i < node.children.length; i++) {
+      if (!isInlineOnly(node.children[i])) { return false; }
+    }
+    return true;
+  }
+
+  /** Renders a run of inline-only nodes as a single string. */
+  function renderInline(nodes) {
+    var s = '';
+    for (var i = 0; i < nodes.length; i++) {
+      var n = nodes[i];
+      if (n.type === 'text') { s += n.raw.replace(/\s+/g, ' '); }
+      else { s += n.openRaw + renderInline(n.children) + n.closeRaw; }
+    }
+    return s;
+  }
+
+  function trimEdges(s) {
+    return s.replace(/^\s+/, '').replace(/\s+$/, '');
+  }
+
+  function formatTokens(tokens) {
+    var lines = [];
+    var root = buildTree(tokens);
+
+    function printNodes(nodes, depth) {
+      var flow = []; /* pending run of text + inline elements */
+
+      function flushFlow() {
+        if (!flow.length) { return; }
+        var s = trimEdges(renderInline(flow));
+        flow = [];
+        if (s) { lines.push(pad(depth) + s); }
+      }
+
+      for (var i = 0; i < nodes.length; i++) {
+        var node = nodes[i];
+        if (isInlineOnly(node)) {
+          flow.push(node);
+          continue;
+        }
+        flushFlow();
+        printNode(node, depth);
+      }
+      flushFlow();
+    }
+
+    function printNode(node, depth) {
+      if (node.type === 'text') {
+        var t = trimEdges(node.raw.replace(/\s+/g, ' '));
+        if (t) { lines.push(pad(depth) + t); }
+      } else if (node.type === 'comment') {
+        lines.push(pad(depth) + collapseBlankLines(node.raw));
+      } else if (node.type === 'doctype' || node.type === 'closetag' || node.type === 'raw') {
+        lines.push(pad(depth) + node.raw);
+      } else if (!FORCE_BLOCK[node.tag] && hasOnlyInlineContent(node)) {
+        /* Text-only (or inline-only) element: keep it on a single line so
+         * no whitespace is injected into its rendered content. */
+        lines.push(pad(depth) + node.openRaw + trimEdges(renderInline(node.children)) + node.closeRaw);
+      } else {
+        lines.push(pad(depth) + node.openRaw);
+        printNodes(node.children, depth + 1);
+        if (node.closeRaw) { lines.push(pad(depth) + node.closeRaw); }
+      }
+    }
+
+    printNodes(root.children, 0);
     return lines.join('\n') + '\n';
   }
 

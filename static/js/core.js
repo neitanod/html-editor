@@ -555,7 +555,9 @@
     '.he-drop { outline: 2px dashed #4aa3ff !important; }',
     'body { caret-color: #f0863a; }',
     '[contenteditable="true"]:focus { outline: none; }',
-    'table.he-empty-borders td, table.he-empty-borders th { outline: 1px dotted rgba(0,0,0,.18); }'
+    'table.he-empty-borders td, table.he-empty-borders th { outline: 1px dotted rgba(0,0,0,.18); }',
+    '.he-cell-selected { background: rgba(240,166,55,.22) !important; outline: 1px solid #f0a637 !important; }',
+    '.he-col-resize { cursor: col-resize !important; }'
   ].join('\n');
 
   /**
