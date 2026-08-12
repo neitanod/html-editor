@@ -7,3 +7,6 @@
 # Editor and OS noise
 *.swp
 .DS_Store
+
+# Agent task workspaces (not part of the project)
+.workspace/
