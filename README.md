@@ -131,6 +131,16 @@ with real form controls, alongside a raw attribute table for when you do know
 what you are doing. Document settings cover the title, charset, viewport,
 description, author, favicon and Open Graph tags.
 
+**Notes, quotations and code blocks.** Select some text, press the button and it
+lands in a box with a look of its own: a note beside the text, a quotation with
+its source line, or a code block in monospace on a dark background. The look of
+each kind travels inside the document, in a tag of its own with a fixed id —
+`html-editor-notes-styles`, `html-editor-citation-styles` and
+`html-editor-sourcecode-styles` — written the first time you use that block and
+never touched again: whatever you tweak in there stays yours, and every later
+block of the same kind follows it. Pressing the same button from inside a box
+takes it off and gives the content back to the document.
+
 **Tables like a word processor.** Insert with a hover grid, then add or delete
 rows and columns, merge and split cells, toggle the header row, resize columns
 by dragging and move between cells with Tab.

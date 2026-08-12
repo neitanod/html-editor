@@ -141,6 +141,16 @@ atributos para cuando sí sabés lo que estás haciendo. Los ajustes del documen
 cubren el título, el charset, el viewport, la descripción, el autor, el favicon
 y las etiquetas de Open Graph.
 
+**Notas, citas y bloques de código.** Seleccionás un texto, apretás el botón y
+queda en un recuadro con estilo propio: una nota al costado, una cita con su
+línea de fuente, o un bloque de código en monoespaciada sobre fondo oscuro. El
+estilo de cada tipo viaja en el documento, en su propia etiqueta con un id fijo
+—`html-editor-notes-styles`, `html-editor-citation-styles` y
+`html-editor-sourcecode-styles`—, que se escribe la primera vez que usás ese
+bloque y no se vuelve a tocar: lo que retoques ahí queda tuyo, y todos los
+bloques del mismo tipo lo siguen. Apretar el mismo botón desde adentro de un
+recuadro lo saca y devuelve el contenido al documento.
+
 **Tablas como en un procesador de texto.** Se insertan con una grilla que se
 previsualiza al pasar el mouse, y después podés agregar y borrar filas y
 columnas, unir y dividir celdas, activar la fila de encabezado, redimensionar
