@@ -115,6 +115,8 @@
       'image.alt': 'Alternative text', 'image.replace': 'Replace image…', 'image.reset': 'Original size',
       'image.fromComputer': 'Choose a file…', 'image.inFolder': 'Images already in this folder',
       'image.noneInFolder': 'No images next to the document yet.',
+      'image.open': 'Open the image in a new tab',
+      'image.openFailed': 'Could not open the image: ',
       // -- crop and rotate -----------------------------------------------------
       'crop.title': 'Crop and rotate', 'crop.apply': 'Apply',
       'crop.rotateLeft': 'Rotate a quarter turn to the left',
@@ -283,6 +285,8 @@
       'image.replace': 'Reemplazar imagen…', 'image.reset': 'Tamaño original',
       'image.fromComputer': 'Elegí un archivo…', 'image.inFolder': 'Imágenes que ya están en esta carpeta',
       'image.noneInFolder': 'Todavía no hay imágenes junto al documento.',
+      'image.open': 'Abrir la imagen en una pestaña nueva',
+      'image.openFailed': 'No se pudo abrir la imagen: ',
       // -- crop and rotate -----------------------------------------------------
       'crop.title': 'Recortar y rotar', 'crop.apply': 'Aplicar',
       'crop.rotateLeft': 'Girar un cuarto de vuelta a la izquierda',

@@ -125,7 +125,11 @@ ruedita acerca apuntando al cursor, arrastrás para recorrer lo que ya no entra 
 un doble clic alterna entre encajar y tamaño real. Desde ahí el documento se lee
 como una galería: las flechas de los costados, y las teclas izquierda y derecha,
 pasan por todas las demás imágenes en el orden en que están en la página, y
-Escape cierra sobre la que estabas mirando, ya seleccionada.
+Escape cierra sobre la que estabas mirando, ya seleccionada. El menú del botón
+derecho ofrece además *Abrir la imagen en una pestaña nueva*, que sigue la
+dirección que la página está usando de verdad: un archivo que está junto al
+documento se abre desde su carpeta, y uno que todavía vive en otro sitio se
+abre allá.
 
 **El contenido pegado de la web puede traerse sus imágenes.** Cuando lo que
 pegás enlaza imágenes alojadas en otro sitio, el editor pregunta si lo querés

@@ -441,6 +441,10 @@
     }
     if (element && element.tagName === 'IMG') {
       entries.push({
+        label: HE.t('image.open', 'Open the image in a new tab'), group: 'element',
+        action: function () { openImage(element); }
+      });
+      entries.push({
         label: HE.t('image.alt', 'Alternative text') + '…', group: 'element',
         action: function () { promptAlt(element); }
       });
@@ -451,6 +455,27 @@
     }
     return entries;
   });
+
+  /**
+   * Opens the picture by itself, at the address the page is really using: a
+   * file next to the document opens from its own folder, and one still hosted
+   * elsewhere opens where it lives.
+   */
+  function openImage(img) {
+    var url = img.currentSrc || resolveHref(img.getAttribute('src') || '');
+    if (!url) { return; }
+    if (url.indexOf('data:') === 0) {
+      // Chrome refuses to navigate to a data URL, so an embedded picture is
+      // handed over as a blob instead of leaving the menu entry doing nothing.
+      fetch(url).then(function (res) { return res.blob(); }).then(function (blob) {
+        window.open(URL.createObjectURL(blob), '_blank', 'noopener');
+      }).catch(function (err) {
+        HE.toast(HE.t('image.openFailed', 'Could not open the image: ') + err.message, 'error');
+      });
+      return;
+    }
+    window.open(url, '_blank', 'noopener');
+  }
 
   function replaceImage(img) {
     var picker = HE.el('input', { type: 'file', accept: 'image/*' });

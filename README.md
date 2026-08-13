@@ -119,7 +119,10 @@ zooms towards the pointer, dragging walks around what no longer fits and a
 double click swings between fitting and life size. The document is read as a
 gallery from there: the arrows on the sides, and the left and right keys, step
 through every other picture in the order they appear in the page, with Escape
-closing on the one you were looking at, already selected.
+closing on the one you were looking at, already selected. Right-clicking it
+also offers *Open the image in a new tab*, which follows the address the page
+is really using: a file next to the document opens from its own folder, and one
+still hosted elsewhere opens where it lives.
 
 **Content pasted from the web can bring its images along.** When what you paste
 links images hosted on another site, the editor asks whether to paste it as is
