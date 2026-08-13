@@ -112,13 +112,21 @@ arriba la gira un cuarto de vuelta para cualquier lado; *Recortar y rotar* abre
 un diálogo con un marco que arrastrás sobre la foto, proporciones fijas (1:1,
 4:3, 3:4, 16:9 o la original), espejado horizontal y vertical, y una regla para
 enderezar un horizonte torcido, que encoge el encuadre sola para que no entren
-las esquinas vacías que deja el giro. El resultado se escribe como un archivo
-nuevo al lado del documento y el `<img>` apunta ahí: el HTML queda tan simple
-como estaba —sin envoltorios ni `transform`— y el archivo original se conserva
-en la carpeta, así que Ctrl+Z te devuelve la imagen que tenías. Un SVG se deja
-en paz, porque recortar formas convirtiéndolas en píxeles es un downgrade
+las esquinas vacías que deja el giro. El resultado se hornea en el archivo y el
+HTML queda tan simple como estaba, sin envoltorios ni `transform`. Un SVG se
+deja en paz, porque recortar formas convirtiéndolas en píxeles es un downgrade
 disfrazado de edición; y una imagen que todavía vive en otro sitio primero te
 ofrece la descarga que la trae a la carpeta.
+
+**Guardar copia o sobreescribir, vos elegís.** El diálogo cierra con los dos
+botones. *Guardar copia* escribe un archivo nuevo al lado y deja el original
+donde estaba, así que Ctrl+Z te devuelve la imagen que tenías. *Sobreescribir*
+pisa el archivo del que salió la imagen, que es lo que evita que la carpeta
+junte una foto por cada retoque; ahí el deshacer te devuelve el documento y los
+píxeles viejos ya se fueron. Sobreescribir está disponible para PNG y JPEG, los
+dos formatos que el editor vuelve a escribir: un `.gif` o un `.webp` saldrían
+convertidos en PNG y el nombre del archivo pasaría a mentir, así que en esos
+casos queda la copia sola.
 
 **La imagen pegada se encuadra antes de aterrizar.** Una captura casi siempre
 trae más de lo que importa, así que `Ctrl+V` abre ese mismo diálogo sobre lo que
@@ -137,9 +145,10 @@ que los ponés, así el párrafo de abajo puede decir "el error está en el 2".
 Se dibuja arrastrando; tocar una marca la agarra, la mueve y le adopta el
 estilo como un gotero, y una ✕ encima (o `Supr`) la saca. Con *Shift* el
 recuadro sale cuadrado y la línea se traba en octavos de vuelta, y `Ctrl+Z` /
-`Ctrl+Y` recorren cada gesto. Las marcas se hornean en un archivo nuevo como
-cualquier otra edición de imagen: lo que mandás es una imagen, y se ve igual
-donde sea que la abran.
+`Ctrl+Y` recorren cada gesto. Las marcas se hornean en el archivo como cualquier
+otra edición de imagen —con los mismos dos botones para terminar, copia o
+sobreescritura—: lo que mandás es una imagen, y se ve igual donde sea que la
+abran.
 
 **Doble clic en una imagen para verla en grande.** Ocupa toda la pantalla, la
 ruedita acerca apuntando al cursor, arrastrás para recorrer lo que ya no entra y

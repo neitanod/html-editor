@@ -106,13 +106,20 @@ a quarter turn either way; *Crop and rotate* opens a dialog with a frame you
 drag over the photograph, fixed proportions (1:1, 4:3, 3:4, 16:9 or the
 original), horizontal and vertical mirroring, and a slider that straightens a
 crooked horizon, shrinking the frame on its own so the empty corners a turn
-leaves behind stay out of it. The result is written as a new file beside the
-document and the `<img>` points at it: the markup stays as plain as it was — no
-wrapper, no `transform` — and the original file is kept in the folder, so Ctrl+Z
-gives you back the picture you had. An SVG is left alone, because turning
-shapes into pixels to crop them is a downgrade dressed as an edit; and a picture
-that still lives on another site is offered the download that brings it into the
-folder first.
+leaves behind stay out of it. The result is baked into the file and the markup
+stays as plain as it was — no wrapper, no `transform`. An SVG is left alone,
+because turning shapes into pixels to crop them is a downgrade dressed as an
+edit; and a picture that still lives on another site is offered the download
+that brings it into the folder first.
+
+**Save a copy or write over it, your call.** The dialog ends with both buttons.
+*Save a copy* writes a new file beside the original and leaves it where it is,
+so Ctrl+Z gives you back the picture you had. *Write over it* replaces the file
+the picture came from, which is what keeps the folder from collecting one
+photograph per retouch; there the undo gives you back the document, and the old
+pixels are already gone. Writing over is available for PNG and JPEG, the two
+formats the editor writes back: a `.gif` or a `.webp` would come out converted
+to PNG and the file name would start lying, so those keep the copy alone.
 
 **A pasted picture is framed before it lands.** A screenshot almost always has
 more in it than the part that matters, so `Ctrl+V` opens that same dialog on
@@ -131,9 +138,10 @@ paragraph underneath can say "the error is in the 2".
 Drawing is dragging; touching a mark picks it up, moves it and adopts its style
 the way an eyedropper does, and a ✕ over it (or `Del`) takes it off. Hold
 *Shift* for a square box or a line locked to eighths of a turn, and `Ctrl+Z` /
-`Ctrl+Y` walk through every gesture. The marks are baked into a new file like
-every other picture edit: what you send is a picture, and it looks the same
-wherever it is opened.
+`Ctrl+Y` walk through every gesture. The marks are baked into the file like
+every other picture edit — ending with the same two buttons, a copy or the file
+written over: what you send is a picture, and it looks the same wherever it is
+opened.
 
 **Double-click a picture to see it large.** It fills the screen, where the wheel
 zooms towards the pointer, dragging walks around what no longer fits and a

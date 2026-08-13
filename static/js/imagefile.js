@@ -8,10 +8,12 @@
  * to the file that was there before — all of that lives here once, so the two
  * dialogs cannot drift into disagreeing about it.
  *
- * The policy itself, in one sentence: the original file is never overwritten.
- * The result is written beside it under a new name, which is what makes Ctrl+Z
- * an honest undo — the address goes back and the pixels it points at are still
- * on disk.
+ * The policy itself, in one sentence: the dialogs offer both endings, and the
+ * user picks. A copy is written beside the original under a new name, which is
+ * what makes Ctrl+Z an honest undo — the address goes back and the pixels it
+ * points at are still on disk. Overwriting gives that up on purpose, because
+ * the alternative is a folder collecting a file per edit, most of them no
+ * longer named anywhere in the document.
  */
 (function (HE) {
   'use strict';
@@ -42,6 +44,26 @@
    */
   function outputMime(src) {
     return /\.jpe?g(\?|#|$)/i.test(src.split('?')[0]) ? 'image/jpeg' : 'image/png';
+  }
+
+  /** The file the document points at, with nothing a URL may carry after it. */
+  function targetName(img) {
+    return ((img && img.getAttribute('src')) || '').split(/[?#]/)[0];
+  }
+
+  /**
+   * True when the file behind the picture can be written over in the format it
+   * already has. Only PNG and JPEG come back out of a canvas, so a .gif or a
+   * .webp would end up holding a picture its name lies about — a worse outcome
+   * than one more file in the folder, which is why those keep the copy alone.
+   */
+  function canOverwrite(img) {
+    var src = targetName(img);
+    // A path that climbs out of the folder, or starts at the root, names a file
+    // the editor does not own. The server would resolve it back into the folder
+    // and write over a different picture than the one on screen.
+    if (!src || src.charAt(0) === '/' || src.split('/').indexOf('..') !== -1) { return false; }
+    return !isRemote(src) && !isVector(src) && /\.(png|jpe?g)$/i.test(src);
   }
 
   /** `photo.png` edited as a crop becomes `photo-crop.png`; the server makes it unique. */
@@ -167,13 +189,37 @@
   }
 
   /**
-   * Writes what a tool painted as a new file beside the document and points the
-   * element at it, in a single undoable step.
+   * A file written over keeps its address, so nothing tells the browser its
+   * pixels changed: what stays on screen is the picture decoded before the
+   * write. Taking the src away and putting it back asks for the file again, and
+   * the editor serves everything with `no-store`, so what comes back is the new
+   * one. Every copy of the picture in the document gets the same treatment,
+   * since they all just became stale together.
    */
-  function write(img, canvas, mime, suffix) {
+  function reload(name) {
+    var doc = HE.doc();
+    if (!doc) { return; }
+    Array.prototype.forEach.call(doc.querySelectorAll('img[src]'), function (node) {
+      if (targetName(node) !== name) { return; }
+      var src = node.getAttribute('src');
+      node.removeAttribute('src');
+      node.setAttribute('src', src);
+    });
+  }
+
+  /**
+   * Writes what a tool painted next to the document and points the element at
+   * it, in a single undoable step. `options.overwrite` writes over the file the
+   * picture already came from instead of adding one beside it — the undo still
+   * puts the document back, and the pixels it used to point at are gone.
+   */
+  function write(img, canvas, mime, suffix, options) {
+    var overwrite = !!(options && options.overwrite) && canOverwrite(img);
     HE.toast(HE.t('image.uploading'), 'info');
     return toBlob(canvas, mime).then(function (blob) {
-      return HE.storeAsset(blob, suggestedName(img, mime, suffix));
+      return overwrite
+        ? HE.storeAsset(blob, targetName(img), { overwrite: targetName(img) })
+        : HE.storeAsset(blob, suggestedName(img, mime, suffix));
     }).then(function (asset) {
       HE.edit(function () {
         img.setAttribute('src', asset.name);
@@ -185,11 +231,13 @@
         // An explicit height belonged to the shape the picture may no longer have.
         if (img.style.height && img.style.height !== 'auto') { img.style.height = 'auto'; }
       });
+      if (asset.overwrote) { reload(asset.name); }
       // The handles are drawn from the old box until the new file has been
       // decoded, so they are placed again once it is on screen.
       img.addEventListener('load', function () { HE.refreshOverlays(); }, { once: true });
       HE.select(img);
-      HE.toast(HE.t('image.stored') + asset.name, 'ok');
+      HE.toast((asset.overwrote ? HE.t('image.replaced', 'Image written over: ')
+        : HE.t('image.stored')) + asset.name, 'ok');
       return asset;
     }).catch(function (err) {
       HE.toast(HE.t('image.writeFailed', 'Could not write the image: ') + err.message, 'error');
@@ -203,6 +251,7 @@
     toBlob: toBlob,
     write: write,
     canEdit: canEdit,
+    canOverwrite: canOverwrite,
     sourceOf: sourceOf,
     outputMime: outputMime
   };

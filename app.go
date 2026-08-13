@@ -218,6 +218,10 @@ func (a *App) handleDocument(w http.ResponseWriter, r *http.Request) {
 
 // handleAssets stores a pasted or dropped file next to the document and returns
 // the relative name to reference it from the HTML.
+//
+// "overwrite" names a file that is already in the folder and asks for it to be
+// replaced in place, which is what an image editor needs so that touching the
+// same picture ten times leaves one file behind instead of ten.
 func (a *App) handleAssets(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -229,9 +233,10 @@ func (a *App) handleAssets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var payload struct {
-		Name string `json:"name"`
-		Data string `json:"data"` // base64, without data-URL prefix
-		Mime string `json:"mime"`
+		Name      string `json:"name"`
+		Data      string `json:"data"` // base64, without data-URL prefix
+		Mime      string `json:"mime"`
+		Overwrite string `json:"overwrite"` // relative name of the file to replace
 	}
 	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 128<<20)).Decode(&payload); err != nil {
 		writeJSONError(w, http.StatusBadRequest, err)
@@ -248,6 +253,26 @@ func (a *App) handleAssets(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	if payload.Overwrite != "" {
+		name, target, err := a.replaceableAsset(payload.Overwrite, payload.Mime)
+		if err != nil {
+			writeJSONError(w, http.StatusBadRequest, err)
+			return
+		}
+		if err := os.WriteFile(target, raw, 0o644); err != nil {
+			writeJSONError(w, http.StatusInternalServerError, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"name":      name,
+			"url":       "/doc/" + name,
+			"size":      len(raw),
+			"overwrote": true,
+		})
+		return
+	}
+
 	name := uniqueAssetName(a.doc.Dir, payload.Name, payload.Mime)
 	if err := os.WriteFile(filepath.Join(a.doc.Dir, name), raw, 0o644); err != nil {
 		writeJSONError(w, http.StatusInternalServerError, err)
@@ -259,6 +284,56 @@ func (a *App) handleAssets(w http.ResponseWriter, r *http.Request) {
 		"url":  "/doc/" + name,
 		"size": len(raw),
 	})
+}
+
+// replaceableAsset checks that a file may be written over and answers with the
+// relative name the document should keep using and the path on disk.
+//
+// Overwriting is the one operation here that destroys something, so it is the
+// one that gets told what it may not touch: anything outside the folder, a file
+// that is not there yet — that is what a new name is for — the document itself,
+// and a file whose extension disagrees with what is about to be written into
+// it, which would leave a .gif holding a PNG.
+func (a *App) replaceableAsset(rel, mimeType string) (string, string, error) {
+	// Cleaning "../foto.png" would answer with the foto.png of this folder,
+	// which is a different file from the one the browser was showing. A name
+	// that climbs is refused instead of quietly reinterpreted.
+	if rel != path.Clean(rel) || strings.HasPrefix(rel, "/") {
+		return "", "", fmt.Errorf("%s is not a plain name inside the folder", rel)
+	}
+	name := strings.TrimPrefix(path.Clean("/"+rel), "/")
+	target, ok := a.resolveInsideDir(name)
+	if !ok || name == "" {
+		return "", "", fmt.Errorf("%s is not inside the document folder", rel)
+	}
+	info, err := os.Stat(target)
+	if err != nil || info.IsDir() {
+		return "", "", fmt.Errorf("%s is not a file in this folder", name)
+	}
+	if target == a.doc.Path {
+		return "", "", fmt.Errorf("%s is the document itself", name)
+	}
+	want := extensionForMime(mimeType)
+	if want == ".bin" {
+		return "", "", fmt.Errorf("%q is not a format a picture gets written in", mimeType)
+	}
+	if !sameImageExtension(filepath.Ext(target), want) {
+		return "", "", fmt.Errorf("%s cannot hold a %s", name, mimeType)
+	}
+	return name, target, nil
+}
+
+// sameImageExtension compares two extensions the way a folder does, where .jpg
+// and .jpeg are the same picture format under two spellings.
+func sameImageExtension(a, b string) bool {
+	normalise := func(ext string) string {
+		ext = strings.ToLower(ext)
+		if ext == ".jpeg" {
+			return ".jpg"
+		}
+		return ext
+	}
+	return normalise(a) == normalise(b)
 }
 
 // archive packs the document as it is on disk. Exporting what was saved, and

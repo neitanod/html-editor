@@ -156,6 +156,17 @@ body.is-resizing { cursor: nwse-resize; user-select: none; }
 .btn:active { transform: translateY(1px); }
 .btn:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; }
 
+/* A disabled button stays where it is, greyed out, with its reason in the
+   title: the hover has to stop lighting it up or it keeps looking clickable. */
+.btn:disabled,
+.btn:disabled:hover {
+  opacity: .38;
+  cursor: default;
+  background: transparent;
+  color: var(--text-dim);
+  transform: none;
+}
+
 .btn svg { width: 17px; height: 17px; flex: none; }
 
 .btn--ghost { color: var(--text-dim); border-color: transparent; }

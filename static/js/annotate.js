@@ -821,15 +821,28 @@
 
     var count = HE.el('span', { class: 'mark__count', text: '' });
 
+    // The marked picture can end up beside the original or on top of it, the
+    // same two endings the crop dialog offers, decided by the same rule about
+    // which files can be written back — and the hint says whichever of the two
+    // this picture really has.
+    var overwriteReady = HE.imagefile.canOverwrite(img);
+
     var body = HE.el('div', { class: 'mark' }, [
       bar,
       styleRow,
       HE.el('div', { class: 'mark__stage-wrap' }, [stage]),
       HE.el('div', { class: 'mark__foot' }, [
         count,
-        HE.el('span', { class: 'mark__hint', text: HE.t('mark.hint', 'Drag to draw, touch a mark to move it. The original file is kept: the marked copy is written next to it.') })
+        HE.el('span', { class: 'mark__hint', text: overwriteReady
+          ? HE.t('mark.hintBoth', 'Drag to draw, touch a mark to move it. Keeping a copy leaves the original where it is; writing over it does not.')
+          : HE.t('mark.hint') })
       ])
     ]);
+
+    function settle(close, overwrite) {
+      close();
+      if (state.shapes.length) { apply(img, bitmap, state.shapes, mime, overwrite); }
+    }
 
     var dialog = HE.modal({
       title: HE.t('mark.title', 'Annotate'),
@@ -838,11 +851,16 @@
       actions: [
         { label: HE.t('common.cancel'), onClick: function (close) { close(); } },
         {
-          label: HE.t('mark.apply', 'Apply'), primary: true,
-          onClick: function (close) {
-            close();
-            if (state.shapes.length) { apply(img, bitmap, state.shapes, mime); }
-          }
+          label: HE.t('mark.applyCopy', 'Save a copy'), primary: !overwriteReady,
+          onClick: function (close) { settle(close, false); }
+        },
+        {
+          label: HE.t('mark.applyOverwrite', 'Write over it'),
+          primary: overwriteReady,
+          disabled: !overwriteReady,
+          title: overwriteReady ? '' :
+            HE.t('image.noOverwrite', 'This picture can only be saved as a copy: its format is not one the editor writes back.'),
+          onClick: function (close) { settle(close, true); }
         }
       ],
       onClose: function () {
@@ -854,12 +872,12 @@
     draw();
   }
 
-  function apply(img, bitmap, shapes, mime) {
+  function apply(img, bitmap, shapes, mime, overwrite) {
     var canvas = document.createElement('canvas');
     canvas.width = bitmap.naturalWidth;
     canvas.height = bitmap.naturalHeight;
     paint(canvas.getContext('2d'), bitmap, shapes, 1);
-    HE.imagefile.write(img, canvas, mime, 'mark');
+    HE.imagefile.write(img, canvas, mime, 'mark', { overwrite: overwrite });
   }
 
   HE.annotate = { open: open };

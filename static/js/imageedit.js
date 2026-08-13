@@ -178,16 +178,33 @@
   function open(img) {
     HE.imagefile.open(img, open).then(function (source) {
       if (!source) { return; }
+      var ready = HE.imagefile.canOverwrite(img);
       openWith(source.bitmap, source.mime, {
-        onApply: function (canvas) { HE.imagefile.write(img, canvas, source.mime, 'crop'); }
+        // The hint describes the endings this picture actually has: promising a
+        // choice next to a button that cannot be pressed reads as a bug.
+        hint: ready
+          ? HE.t('crop.hintBoth', 'Drag inside the picture to frame it. Keeping a copy leaves the original where it is; writing over it does not.')
+          : HE.t('crop.hint'),
+        applyLabel: HE.t('crop.applyCopy', 'Save a copy'),
+        overwrite: {
+          label: HE.t('crop.applyOverwrite', 'Write over it'),
+          disabled: !ready,
+          title: ready ? '' : HE.t('image.noOverwrite')
+        },
+        onApply: function (canvas, overwrite) {
+          HE.imagefile.write(img, canvas, source.mime, 'crop', { overwrite: overwrite });
+        }
       });
     });
   }
 
   /**
    * The dialog itself, over a bitmap that may not be in the document yet.
-   * `options` = {title, applyLabel, cancelLabel, hint, onApply(canvas),
-   * onCancel()}; what becomes of the canvas is the caller's business.
+   * `options` = {title, applyLabel, cancelLabel, hint, overwrite, onApply(canvas,
+   * overwrite), onCancel()}; what becomes of the canvas is the caller's
+   * business. `overwrite` = {label, disabled, title} adds the second ending —
+   * the same picture, written over the file it came from — and the dialogs that
+   * have nothing to write over leave it out.
    */
   function openWith(bitmap, mime, options) {
     var state = {
@@ -403,24 +420,42 @@
     // it was.
     var settled = false;
 
+    function settle(close, overwrite) {
+      settled = true;
+      close();
+      options.onApply(bake(state, mime), overwrite);
+    }
+
+    // Writing over the file is the ending that keeps the folder from filling
+    // up, so it is the one the dialog leans on — unless this picture cannot be
+    // written over, and then the copy takes the weight back.
+    var overwriteReady = !!(options.overwrite && !options.overwrite.disabled);
+    var actions = [
+      {
+        label: options.cancelLabel || HE.t('common.cancel'),
+        onClick: function (close) { close(); }
+      },
+      {
+        label: options.applyLabel || HE.t('crop.apply', 'Apply'),
+        primary: !overwriteReady,
+        onClick: function (close) { settle(close, false); }
+      }
+    ];
+    if (options.overwrite) {
+      actions.push({
+        label: options.overwrite.label,
+        title: options.overwrite.title,
+        disabled: options.overwrite.disabled,
+        primary: overwriteReady,
+        onClick: function (close) { settle(close, true); }
+      });
+    }
+
     var dialog = HE.modal({
       title: options.title || HE.t('crop.title', 'Crop and rotate'),
       body: body,
       width: '720px',
-      actions: [
-        {
-          label: options.cancelLabel || HE.t('common.cancel'),
-          onClick: function (close) { close(); }
-        },
-        {
-          label: options.applyLabel || HE.t('crop.apply', 'Apply'), primary: true,
-          onClick: function (close) {
-            settled = true;
-            close();
-            options.onApply(bake(state, mime));
-          }
-        }
-      ],
+      actions: actions,
       onClose: function () {
         endDrag();
         if (!settled) {

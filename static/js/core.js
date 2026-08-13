@@ -95,7 +95,9 @@
       'doc.pending': 'This document does not exist yet: it is created, with its folder, by your first change',
       'image.uploading': 'Storing image next to the document…',
       'image.stored': 'Image stored as ',
+      'image.replaced': 'Image written over: ',
       'image.failed': 'Could not store the image: ',
+      'image.noOverwrite': 'This picture can only be saved as a copy: its format is not one the editor writes back.',
       'link.text': 'Text', 'link.href': 'Address', 'link.open': 'Open', 'link.apply': 'Apply',
       'link.remove': 'Remove link', 'link.title': 'Link', 'link.newTab': 'Open in a new tab',
       'menu.copy': 'Copy', 'menu.cut': 'Cut', 'menu.paste': 'Paste', 'menu.duplicate': 'Duplicate',
@@ -119,6 +121,7 @@
       'image.openFailed': 'Could not open the image: ',
       // -- crop and rotate -----------------------------------------------------
       'crop.title': 'Crop and rotate', 'crop.apply': 'Apply',
+      'crop.applyCopy': 'Save a copy', 'crop.applyOverwrite': 'Write over it',
       'crop.rotateLeft': 'Rotate a quarter turn to the left',
       'crop.rotateRight': 'Rotate a quarter turn to the right',
       'crop.flipH': 'Mirror horizontally', 'crop.flipV': 'Mirror vertically',
@@ -128,6 +131,7 @@
       'crop.ratio.landscape': 'Landscape 4:3', 'crop.ratio.portrait': 'Portrait 3:4',
       'crop.ratio.wide': 'Widescreen 16:9',
       'crop.hint': 'Drag inside the picture to frame it. The original file is kept: the result is written next to it.',
+      'crop.hintBoth': 'Drag inside the picture to frame it. Keeping a copy leaves the original where it is; writing over it does not.',
       'crop.pasteTitle': 'Frame the pasted picture', 'crop.pasteApply': 'Paste the frame',
       'crop.pasteWhole': 'Paste it whole',
       'crop.pasteHint': 'Drag inside the picture to frame it. Only what is framed gets stored next to the document.',
@@ -141,6 +145,7 @@
       'image.download': 'Download it',
       // -- annotating ----------------------------------------------------------
       'mark.title': 'Annotate', 'mark.apply': 'Apply',
+      'mark.applyCopy': 'Save a copy', 'mark.applyOverwrite': 'Write over it',
       'mark.tool.blur': 'Blur a patch', 'mark.tool.number': 'Numbered disc',
       'mark.tool.rect': 'Box', 'mark.tool.ellipse': 'Ellipse',
       'mark.tool.line': 'Line', 'mark.tool.arrow': 'Arrow',
@@ -154,6 +159,7 @@
       'mark.total': 'unreadable',
       'mark.one': 'mark', 'mark.marks': 'marks', 'mark.none': 'no marks yet',
       'mark.hint': 'Drag to draw, touch a mark to move it. The original file is kept: the marked copy is written next to it.',
+      'mark.hintBoth': 'Drag to draw, touch a mark to move it. Keeping a copy leaves the original where it is; writing over it does not.',
       // -- the picture seen large ----------------------------------------------
       'gallery.view': 'View large', 'gallery.prev': 'Previous image (←)',
       'gallery.next': 'Next image (→)', 'gallery.close': 'Close (Esc)',
@@ -283,7 +289,9 @@
       'doc.pending': 'Este documento todavía no existe: se crea, con su carpeta, con tu primer cambio',
       'image.uploading': 'Guardando la imagen junto al documento…',
       'image.stored': 'Imagen guardada como ',
+      'image.replaced': 'Imagen sobreescrita: ',
       'image.failed': 'No se pudo guardar la imagen: ',
+      'image.noOverwrite': 'Esta imagen sólo se puede guardar como copia: su formato no es uno de los que el editor vuelve a escribir.',
       'link.text': 'Texto', 'link.href': 'Dirección', 'link.open': 'Abrir', 'link.apply': 'Aplicar',
       'link.remove': 'Quitar enlace', 'link.title': 'Enlace', 'link.newTab': 'Abrir en una pestaña nueva',
       'menu.copy': 'Copiar', 'menu.cut': 'Cortar', 'menu.paste': 'Pegar', 'menu.duplicate': 'Duplicar',
@@ -308,6 +316,7 @@
       'image.openFailed': 'No se pudo abrir la imagen: ',
       // -- crop and rotate -----------------------------------------------------
       'crop.title': 'Recortar y rotar', 'crop.apply': 'Aplicar',
+      'crop.applyCopy': 'Guardar copia', 'crop.applyOverwrite': 'Sobreescribir',
       'crop.rotateLeft': 'Girar un cuarto de vuelta a la izquierda',
       'crop.rotateRight': 'Girar un cuarto de vuelta a la derecha',
       'crop.flipH': 'Espejar en horizontal', 'crop.flipV': 'Espejar en vertical',
@@ -317,6 +326,7 @@
       'crop.ratio.landscape': 'Apaisada 4:3', 'crop.ratio.portrait': 'Vertical 3:4',
       'crop.ratio.wide': 'Panorámica 16:9',
       'crop.hint': 'Arrastrá sobre la imagen para encuadrarla. El archivo original se conserva: el resultado se escribe al lado.',
+      'crop.hintBoth': 'Arrastrá sobre la imagen para encuadrarla. Con la copia el original se queda donde está; sobreescribiendo, se pierde.',
       'crop.pasteTitle': 'Encuadrar la imagen pegada', 'crop.pasteApply': 'Pegar el encuadre',
       'crop.pasteWhole': 'Pegarla entera',
       'crop.pasteHint': 'Arrastrá sobre la imagen para encuadrarla. Sólo lo encuadrado se guarda junto al documento.',
@@ -330,6 +340,7 @@
       'image.download': 'Descargarla',
       // -- anotación -----------------------------------------------------------
       'mark.title': 'Anotar', 'mark.apply': 'Aplicar',
+      'mark.applyCopy': 'Guardar copia', 'mark.applyOverwrite': 'Sobreescribir',
       'mark.tool.blur': 'Difuminar una zona', 'mark.tool.number': 'Número en círculo',
       'mark.tool.rect': 'Recuadro', 'mark.tool.ellipse': 'Elipse',
       'mark.tool.line': 'Línea', 'mark.tool.arrow': 'Flecha',
@@ -343,6 +354,7 @@
       'mark.total': 'ilegible',
       'mark.one': 'marca', 'mark.marks': 'marcas', 'mark.none': 'todavía sin marcas',
       'mark.hint': 'Arrastrá para dibujar, tocá una marca para moverla. El archivo original se conserva: la copia marcada se escribe al lado.',
+      'mark.hintBoth': 'Arrastrá para dibujar, tocá una marca para moverla. Con la copia el original se queda donde está; sobreescribiendo, se pierde.',
       // -- la imagen en grande -------------------------------------------------
       'gallery.view': 'Ver en grande', 'gallery.prev': 'Imagen anterior (←)',
       'gallery.next': 'Imagen siguiente (→)', 'gallery.close': 'Cerrar (Esc)',
@@ -739,8 +751,13 @@
 
   /* ------------------------------------------------------------- assets -- */
 
-  /** Uploads a File/Blob next to the document; resolves to its relative name. */
-  HE.storeAsset = function (file, suggestedName) {
+  /**
+   * Uploads a File/Blob next to the document; resolves to its relative name.
+   * `options.overwrite` names a file already in the folder to write over
+   * instead of adding one, and the server is the one that says whether that
+   * file may be touched.
+   */
+  HE.storeAsset = function (file, suggestedName, options) {
     return new Promise(function (resolve, reject) {
       var reader = new FileReader();
       reader.onerror = function () { reject(new Error('cannot read file')); };
@@ -752,7 +769,8 @@
           body: JSON.stringify({
             name: suggestedName || file.name || '',
             mime: file.type || '',
-            data: data
+            data: data,
+            overwrite: (options && options.overwrite) || ''
           })
         }).then(function (res) {
           return res.json().then(function (payload) {
@@ -811,6 +829,10 @@
         type: 'button',
         text: action.label
       });
+      // An action that cannot be taken here is still worth showing: the title
+      // is where it says why, which is more use than a button that vanished.
+      if (action.title) { btn.title = action.title; }
+      if (action.disabled) { btn.disabled = true; }
       btn.addEventListener('click', function () { action.onClick && action.onClick(close); });
       foot.appendChild(btn);
     });
@@ -833,7 +855,8 @@
     });
     document.addEventListener('keydown', onKey, true);
 
-    var focusable = card.querySelector('input, select, textarea, button.btn--primary');
+    var focusable = card.querySelector(
+      'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button.btn--primary:not([disabled])');
     if (focusable) { setTimeout(function () { focusable.focus(); }, 30); }
 
     return { close: close, card: card, body: body };
