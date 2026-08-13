@@ -43,9 +43,13 @@ FILE|FOLDER:
 
     A document that does not exist yet opens on a complete HTML skeleton
     (html, head with title/charset/viewport, and body); the folder and the
-    file are created on the first save, so closing without saving leaves
-    nothing behind. Pasted images are stored in that same folder, which
-    keeps each document together with its assets.
+    file are created by the first change, so opening a name just to look at
+    it and closing the tab leaves nothing behind. Pasted images are stored
+    in that same folder, which keeps each document together with its assets.
+
+    Editing writes: a couple of seconds after a change the document goes to
+    disk on its own, so Ctrl+S is there to make sure, not to avoid losing
+    work. --read-only disables every write.
 
 OPTIONS:
     --port <n>        Port for the local server (0 = pick a free one)
@@ -147,7 +151,7 @@ func main() {
 	url := fmt.Sprintf("http://%s:%d/", displayHost(bind), actualPort)
 	fmt.Printf("html-editor %s\n", Version)
 	if doc.Pending() {
-		fmt.Printf("new      %s (created when you save)\n", doc.Path)
+		fmt.Printf("new      %s (created by your first change)\n", doc.Path)
 	} else {
 		fmt.Printf("editing  %s\n", doc.Path)
 	}

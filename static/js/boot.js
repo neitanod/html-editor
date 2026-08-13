@@ -444,13 +444,13 @@
   }
 
   // A document opened by name may not be on disk yet: it is created, folder
-  // and all, on the first save. Saying so up front avoids the surprise of
-  // closing the tab and finding nothing there.
+  // and all, by the first change, which autosave writes on its own. Saying so
+  // up front avoids the surprise of a folder appearing without being asked.
   function announceIfPending() {
     fetch('/api/document').then(function (res) { return res.json(); }).then(function (data) {
       if (!data.pending) { return; }
       HE.pending = true;
-      HE.toast(HE.t('doc.pending', 'This document does not exist yet: it is created, with its folder, when you save'), 'info');
+      HE.toast(HE.t('doc.pending', 'This document does not exist yet: it is created, with its folder, by your first change'), 'info');
     }).catch(function () { /* the editor works regardless */ });
   }
 

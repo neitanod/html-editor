@@ -4,8 +4,8 @@
 
 Un editor visual para los archivos HTML que ya tenés en tu carpeta. Un solo
 binario en Go, sin runtime, sin proyecto que configurar, sin base de datos: lo
-ejecutás, se abre el navegador, editás la página como si fuera un documento,
-apretás Guardar y el archivo del disco cambia.
+ejecutás, se abre el navegador, editás la página como si fuera un documento, y
+un par de segundos después el archivo del disco cambia solo.
 
 ```bash
 cd micarpeta
@@ -61,10 +61,10 @@ publicar, comprimir o mover como una unidad.
 
 Un documento que todavía no existe abre con el esqueleto completo: `<!DOCTYPE
 html>`, `<html lang>`, un `<head>` con charset, viewport y título, y una hoja de
-estilos por defecto legible. No se escribe nada hasta que guardás: ahí se crean
-la carpeta y el archivo, así que abrir un nombre para probar y cerrar la pestaña
-no deja rastro. Un `index.html` sin guardar toma el título del nombre de la
-carpeta.
+estilos por defecto legible. No se escribe nada hasta que lo editás: la carpeta
+y el archivo los crea el primer cambio, así que abrir un nombre para mirarlo y
+cerrar la pestaña no deja rastro. Un `index.html` que todavía no está en el
+disco toma el título del nombre de la carpeta.
 
 ### Opciones
 
@@ -86,6 +86,15 @@ carpeta y se muestra en un iframe, así que su hoja de estilos, sus fuentes y su
 imágenes relativas se ven igual que cuando abrís el archivo directamente. Los
 scripts del documento quedan aparcados mientras editás y se restauran intactos
 al guardar.
+
+**Guardado automático.** Dos segundos después de que dejás de cambiar algo, el
+documento se escribe en el disco — y si no parás nunca, se escribe igual cada
+diez segundos. Lo hace callado: el único indicio son la barra de estado y el
+punto al lado del nombre del archivo, y sólo aparece un aviso si una escritura
+falla. `Ctrl+S` y el botón *Guardar* siguen funcionando y siguen confirmando;
+están para cuando querés asegurarte, y ya no porque algo dependa de ellos. Al
+irte de la pestaña, ocultarla o cerrarla se escribe lo que quedaba pendiente.
+Con `--read-only` no se escribe nada.
 
 **Vista dividida con el código.** Apretá *Código* (o `Ctrl+Shift+E`) para ver el
 HTML generado al lado de la página, coloreado y editable. Aplicar empuja tus
@@ -193,7 +202,9 @@ columnas arrastrando y moverte entre celdas con Tab.
 ## Seguridad de tus archivos
 
 El primer guardado de cada sesión copia el archivo que encontró en el disco a
-`<archivo>.bak`. Los guardados son atómicos: el contenido nuevo va a un archivo
+`<archivo>.bak`, y de ahí en más el guardado automático escribe encima del
+documento sin tocar esa copia: el respaldo se queda en la versión que abriste,
+por muchas veces que se escriba después. Los guardados son atómicos: el contenido nuevo va a un archivo
 temporal en la misma carpeta y se renombra sobre el original, así que un
 guardado interrumpido nunca te trunca el documento. El servidor sólo lee y
 escribe dentro de la carpeta del archivo que abriste, y escucha en `127.0.0.1`

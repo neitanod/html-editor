@@ -15,6 +15,7 @@
     filePath: document.documentElement.dataset.path || '',
     readOnly: document.documentElement.dataset.readOnly === 'true',
     dirty: false,
+    revision: 0,
     ready: false,
     selected: null,
     modules: {},
@@ -91,7 +92,7 @@
       'status.selection': 'Selection', 'status.nothing': 'Nothing selected',
       'save.ok': 'Saved to disk', 'save.fail': 'Could not save: ',
       'save.readonly': 'Read-only mode: saving is disabled',
-      'doc.pending': 'This document does not exist yet: it is created, with its folder, when you save',
+      'doc.pending': 'This document does not exist yet: it is created, with its folder, by your first change',
       'image.uploading': 'Storing image next to the document…',
       'image.stored': 'Image stored as ',
       'image.failed': 'Could not store the image: ',
@@ -258,7 +259,7 @@
       'status.selection': 'Selección', 'status.nothing': 'Nada seleccionado',
       'save.ok': 'Guardado en disco', 'save.fail': 'No se pudo guardar: ',
       'save.readonly': 'Modo sólo lectura: no se puede guardar',
-      'doc.pending': 'Este documento todavía no existe: se crea, con su carpeta, cuando guardás',
+      'doc.pending': 'Este documento todavía no existe: se crea, con su carpeta, con tu primer cambio',
       'image.uploading': 'Guardando la imagen junto al documento…',
       'image.stored': 'Imagen guardada como ',
       'image.failed': 'No se pudo guardar la imagen: ',
@@ -564,6 +565,10 @@
 
   HE.markDirty = function () {
     HE.dirty = true;
+    // Counts edits so a save that is already in flight can tell whether the
+    // document moved on while it travelled. Saving every couple of seconds
+    // makes typing over a save the normal case, not the rare one.
+    HE.revision += 1;
     var dot = document.getElementById('dirty-dot');
     if (dot) { dot.hidden = false; }
     HE.emit('dirty', true);
@@ -650,7 +655,13 @@
 
   /* -------------------------------------------------------------- saving -- */
 
-  HE.save = function () {
+  /**
+   * Writes the document to disk. `options.silent` skips the confirmation toast,
+   * which is what autosave uses: one toast every couple of seconds would bury
+   * everything else the editor has to say.
+   */
+  HE.save = function (options) {
+    var silent = !!(options && options.silent);
     if (HE.readOnly) { HE.toast(HE.t('save.readonly'), 'warn'); return Promise.resolve(false); }
     // Ctrl+S while the source panel holds unapplied edits used to write the
     // document as it was before them, silently losing what the user typed.
@@ -661,6 +672,7 @@
     // The browser serialises everything on very few lines; the file on disk is
     // meant to stay readable, so it is re-indented before it is written.
     var content = HE.formatHTML ? HE.formatHTML(HE.serialize()) : HE.serialize();
+    var revision = HE.revision;
     return fetch('/api/document', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -671,8 +683,10 @@
         return data;
       });
     }).then(function (data) {
-      HE.markClean();
-      HE.toast(HE.t('save.ok'), 'ok');
+      // What went to disk is the document as it was when the request left; if
+      // the user kept typing meanwhile, it still has changes to write.
+      if (HE.revision === revision) { HE.markClean(); }
+      if (!silent) { HE.toast(HE.t('save.ok'), 'ok'); }
       HE.emit('saved', data);
       return true;
     }).catch(function (err) {

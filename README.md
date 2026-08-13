@@ -4,7 +4,8 @@
 
 A visual editor for the HTML files sitting in your folder. One Go binary, no
 runtime, no project setup, no database: you run it, your browser opens, you edit
-the page as a document, you press Save, and the file on disk changes.
+the page as a document, and the file on disk changes on its own a couple of
+seconds later.
 
 ```bash
 cd myfolder
@@ -58,9 +59,10 @@ can be published, zipped or moved as a unit.
 
 A document that does not exist yet opens on a complete skeleton — `<!DOCTYPE
 html>`, `<html lang>`, a `<head>` with charset, viewport and title, and a
-readable default stylesheet. Nothing is written until you save: the folder and
-the file are created then, so opening a name to try it out and closing the tab
-leaves no trace. An unsaved `index.html` takes its title from the folder name.
+readable default stylesheet. Nothing is written until you edit it: the folder
+and the file are created by the first change, so opening a name just to look at
+it and closing the tab leaves no trace. An `index.html` that is not on disk yet
+takes its title from the folder name.
 
 ### Options
 
@@ -81,6 +83,14 @@ leaves no trace. An unsaved `index.html` takes its title from the folder name.
 and rendered in an iframe, so its stylesheet, its fonts and its relative images
 look exactly like they will when the file is opened directly. Scripts in the
 document are parked while editing and restored untouched on save.
+
+**Autosave.** Two seconds after you stop changing something, the document is
+written to disk — and, if you never stop, it is written anyway every ten
+seconds. It happens quietly: the status bar and the dot next to the file name
+are the only sign, and a toast shows up only if a write fails. `Ctrl+S` and the
+*Save* button still work and still confirm; they are there for when you want to
+be sure, not because anything depends on them. Leaving the tab, hiding it or
+closing it writes what was still pending. `--read-only` disables all of it.
 
 **Split source view.** Press *Source* (or `Ctrl+Shift+E`) to see the generated
 HTML next to the page, syntax-highlighted and editable. Apply pushes your edits
@@ -181,7 +191,9 @@ by dragging and move between cells with Tab.
 
 ## Safety
 
-The first save of a session copies the file it found on disk to `<file>.bak`.
+The first save of a session copies the file it found on disk to `<file>.bak`,
+which is what autosave writes over from then on: the backup stays at the version
+you opened, however many times the document is written afterwards.
 Saves are atomic: the new content goes to a temporary file in the same folder
 and is renamed over the original, so an interrupted save never truncates your
 document. The server only ever reads and writes inside the folder of the file
