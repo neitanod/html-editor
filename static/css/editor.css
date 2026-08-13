@@ -1578,19 +1578,39 @@ body.is-resizing { cursor: nwse-resize; user-select: none; }
   background: var(--ink-800);
 }
 
-/* Each tool shows the controls that mean something for it: a blur has no
-   outline to colour, and a line has no inside to fill. */
-.mark__style[data-tool="blur"] .mark__only--shape,
-.mark__style[data-tool="blur"] .mark__only--box,
-.mark__style[data-tool="blur"] .mark__only--line,
-.mark__style[data-tool="rect"] .mark__only--line,
-.mark__style[data-tool="ellipse"] .mark__only--line,
-.mark__style[data-tool="line"] .mark__only--box,
-.mark__style[data-tool="arrow"] .mark__only--box,
-.mark__style[data-tool="rect"] .mark__only--blur,
-.mark__style[data-tool="ellipse"] .mark__only--blur,
-.mark__style[data-tool="line"] .mark__only--blur,
-.mark__style[data-tool="arrow"] .mark__only--blur { display: none; }
+/* Every control is hidden until the kind of mark being styled asks for it: a
+   blur has no outline to colour, a line has no inside to fill, and a numbered
+   disc has neither. Hiding by default and naming what shows keeps each kind
+   readable as one line. */
+.mark__style [class*="mark__only--"] { display: none; }
+
+.mark__style[data-kind="blur"] .mark__only--blur,
+
+.mark__style[data-kind="number"] .mark__only--coloured,
+.mark__style[data-kind="number"] .mark__only--plain,
+.mark__style[data-kind="number"] .mark__only--number,
+.mark__style[data-kind="number"] .mark__only--drawn,
+
+.mark__style[data-kind="rect"] .mark__only--coloured,
+.mark__style[data-kind="rect"] .mark__only--box,
+.mark__style[data-kind="rect"] .mark__only--rect,
+.mark__style[data-kind="rect"] .mark__only--stroked,
+.mark__style[data-kind="rect"] .mark__only--drawn,
+
+.mark__style[data-kind="ellipse"] .mark__only--coloured,
+.mark__style[data-kind="ellipse"] .mark__only--box,
+.mark__style[data-kind="ellipse"] .mark__only--stroked,
+.mark__style[data-kind="ellipse"] .mark__only--drawn,
+
+.mark__style[data-kind="line"] .mark__only--coloured,
+.mark__style[data-kind="line"] .mark__only--plain,
+.mark__style[data-kind="line"] .mark__only--stroked,
+.mark__style[data-kind="line"] .mark__only--drawn,
+
+.mark__style[data-kind="arrow"] .mark__only--coloured,
+.mark__style[data-kind="arrow"] .mark__only--plain,
+.mark__style[data-kind="arrow"] .mark__only--stroked,
+.mark__style[data-kind="arrow"] .mark__only--drawn { display: flex; }
 
 .mark__toggle {
   display: flex;
@@ -1664,6 +1684,35 @@ body.is-resizing { cursor: nwse-resize; user-select: none; }
 }
 
 .mark__canvas { display: block; }
+
+/* The selected mark gets an outline it cannot be confused with: dashed, and in
+   the same amber the editor uses for "this is what you have in hand". */
+.mark__halo {
+  position: absolute;
+  border: 1px dashed var(--amber);
+  border-radius: 3px;
+  pointer-events: none;
+}
+.mark__halo[hidden] { display: none; }
+
+.mark__remove {
+  position: absolute;
+  top: -11px;
+  right: -11px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, .4);
+  border-radius: 50%;
+  background: var(--danger);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: var(--shadow-soft);
+}
+.mark__remove:hover { filter: brightness(1.12); }
 
 .mark__foot { display: flex; align-items: baseline; gap: .8rem; }
 
