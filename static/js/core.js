@@ -132,6 +132,11 @@
       'crop.remoteBody': 'It has to be stored next to the document before it can be cropped.',
       'crop.remoteHint': 'The file lands in this folder and the document links it relatively, which is the same thing the paste dialog offers.',
       'crop.download': 'Download it',
+      // -- the picture seen large ----------------------------------------------
+      'gallery.view': 'View large', 'gallery.prev': 'Previous image (←)',
+      'gallery.next': 'Next image (→)', 'gallery.close': 'Close (Esc)',
+      'gallery.zoomIn': 'Zoom in', 'gallery.zoomOut': 'Zoom out',
+      'gallery.fit': 'Fit to the screen',
       // -- menu ----------------------------------------------------------------
       'menu.pasteHint': 'Use Ctrl+V to paste',
       // -- props ---------------------------------------------------------------
@@ -295,6 +300,11 @@
       'crop.remoteBody': 'Hay que guardarla junto al documento antes de poder recortarla.',
       'crop.remoteHint': 'El archivo queda en esta carpeta y el documento lo enlaza de forma relativa, que es lo mismo que ofrece el diálogo de pegado.',
       'crop.download': 'Descargarla',
+      // -- la imagen en grande -------------------------------------------------
+      'gallery.view': 'Ver en grande', 'gallery.prev': 'Imagen anterior (←)',
+      'gallery.next': 'Imagen siguiente (→)', 'gallery.close': 'Cerrar (Esc)',
+      'gallery.zoomIn': 'Acercar', 'gallery.zoomOut': 'Alejar',
+      'gallery.fit': 'Encajar en la pantalla',
       // -- menu ----------------------------------------------------------------
       'menu.pasteHint': 'Usá Ctrl+V para pegar',
       // -- props ---------------------------------------------------------------

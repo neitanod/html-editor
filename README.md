@@ -104,6 +104,13 @@ shapes into pixels to crop them is a downgrade dressed as an edit; and a picture
 that still lives on another site is offered the download that brings it into the
 folder first.
 
+**Double-click a picture to see it large.** It fills the screen, where the wheel
+zooms towards the pointer, dragging walks around what no longer fits and a
+double click swings between fitting and life size. The document is read as a
+gallery from there: the arrows on the sides, and the left and right keys, step
+through every other picture in the order they appear in the page, with Escape
+closing on the one you were looking at, already selected.
+
 **Content pasted from the web can bring its images along.** When what you paste
 links images hosted on another site, the editor asks whether to paste it as is
 or to download those resources: they are stored next to the document and
