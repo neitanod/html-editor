@@ -120,6 +120,16 @@ en paz, porque recortar formas convirtiéndolas en píxeles es un downgrade
 disfrazado de edición; y una imagen que todavía vive en otro sitio primero te
 ofrece la descarga que la trae a la carpeta.
 
+**Anotar lo que la imagen tiene que mostrar.** *Anotar* dibuja encima recuadros,
+elipses, líneas y flechas, cada uno con su color de borde, su color de fondo y
+su grosor, y difumina las zonas que no tienen por qué publicarse, con fuerza
+suficiente para que sea una decisión y no una sugerencia. Con *Shift* el
+recuadro sale cuadrado y la línea se traba en octavos de vuelta, `Ctrl+Z` y
+`Ctrl+Y` recorren lo que dibujaste, y un cambio de color o de grosor alcanza
+también a la última marca, así la arreglás donde estás en vez de volver a
+hacerla. Las marcas se hornean en un archivo nuevo como cualquier otra edición
+de imagen: lo que mandás es una imagen, y se ve igual donde sea que la abran.
+
 **Doble clic en una imagen para verla en grande.** Ocupa toda la pantalla, la
 ruedita acerca apuntando al cursor, arrastrás para recorrer lo que ya no entra y
 un doble clic alterna entre encajar y tamaño real. Desde ahí el documento se lee

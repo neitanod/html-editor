@@ -114,6 +114,16 @@ shapes into pixels to crop them is a downgrade dressed as an edit; and a picture
 that still lives on another site is offered the download that brings it into the
 folder first.
 
+**Annotate what the picture is meant to show.** *Annotate* draws boxes,
+ellipses, lines and arrows over it, each with its own outline colour, fill
+colour and thickness, and blurs the patches that have no business being
+published — hard enough to be a decision rather than a suggestion. Hold *Shift*
+for a square box or a line locked to eighths of a turn, `Ctrl+Z` and `Ctrl+Y`
+walk through what you drew, and a change of colour or thickness also reaches the
+mark you drew last, so you fix it where you are instead of drawing it again. The
+marks are baked into a new file like every other picture edit: what you send is
+a picture, and it looks the same wherever it is opened.
+
 **Double-click a picture to see it large.** It fills the screen, where the wheel
 zooms towards the pointer, dragging walks around what no longer fits and a
 double click swings between fitting and life size. The document is read as a

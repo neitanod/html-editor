@@ -10,14 +10,12 @@
  * as plain as it was — still one `<img src="photo.png">` — and the folder still
  * publishable as it stands.
  *
- * The original file stays on disk untouched and the result is written beside it
- * under a new name, which is what makes Ctrl+Z an honest undo: the address goes
- * back and the pixels it points at are still there.
+ * Which pictures can be touched, and what happens to the file that was there
+ * before, is imagefile.js: this module only decides what gets painted.
  */
 (function (HE) {
   'use strict';
 
-  var JPEG_QUALITY = 0.92;
   var MIN_CROP = 16;          // in pixels of the rotated image
   var STAGE_W = 620;
   var STAGE_H = 420;
@@ -30,105 +28,6 @@
     { key: 'portrait', label: '3:4', value: 3 / 4 },
     { key: 'wide', label: '16:9', value: 16 / 9 }
   ];
-
-  /* ------------------------------------------------------------- sources -- */
-
-  function isRemote(value) {
-    return /^(https?:)?\/\//i.test((value || '').trim());
-  }
-
-  function isVector(value) {
-    return /\.svgz?(\?|#|$)/i.test((value || '').split('?')[0]);
-  }
-
-  /** The address the browser actually painted, resolved against the document. */
-  function sourceOf(img) {
-    if (img.currentSrc) { return img.currentSrc; }
-    var win = HE.win();
-    try {
-      return new URL(img.getAttribute('src') || '', win.location.href).href;
-    } catch (err) {
-      return img.getAttribute('src') || '';
-    }
-  }
-
-  /**
-   * JPEG survives as JPEG so a photograph does not quadruple in size on its way
-   * through the editor; everything else comes out as PNG.
-   */
-  function outputMime(src) {
-    return /\.jpe?g(\?|#|$)/i.test(src.split('?')[0]) ? 'image/jpeg' : 'image/png';
-  }
-
-  function suggestedName(img, mime) {
-    var src = (img.getAttribute('src') || 'image').split(/[?#]/)[0];
-    var base = src.substring(src.lastIndexOf('/') + 1) || 'image';
-    var dot = base.lastIndexOf('.');
-    var stem = dot > 0 ? base.slice(0, dot) : base;
-    if (!/-crop$/.test(stem)) { stem += '-crop'; }
-    return stem + (mime === 'image/jpeg' ? '.jpg' : '.png');
-  }
-
-  /** Loads the picture at its natural size, outside the edited document. */
-  function loadBitmap(src) {
-    return new Promise(function (resolve, reject) {
-      var bitmap = new Image();
-      bitmap.onload = function () {
-        if (!bitmap.naturalWidth || !bitmap.naturalHeight) {
-          reject(new Error('empty image'));
-          return;
-        }
-        resolve(bitmap);
-      };
-      bitmap.onerror = function () { reject(new Error('could not load ' + src)); };
-      bitmap.src = src;
-    });
-  }
-
-  /**
-   * Refuses the pictures this cannot honestly edit and says why. A vector would
-   * have to be rasterised to be cropped, which is a downgrade wearing the
-   * clothes of an edit; a picture still hosted elsewhere taints the canvas, and
-   * the editor already knows how to bring it home first.
-   */
-  function guard(img) {
-    var src = img.getAttribute('src') || '';
-    if (isVector(src)) {
-      HE.toast(HE.t('crop.vector', 'An SVG is drawn from shapes: cropping it would turn it into a bitmap'), 'warn');
-      return false;
-    }
-    if (isRemote(src)) {
-      offerToLocalize(img);
-      return false;
-    }
-    return true;
-  }
-
-  function offerToLocalize(img) {
-    HE.modal({
-      title: HE.t('crop.remoteTitle', 'The image is on another site'),
-      width: '460px',
-      body: HE.el('div', { class: 'form' }, [
-        HE.el('p', { class: 'assets-ask__text',
-          text: HE.t('crop.remoteBody', 'It has to be stored next to the document before it can be cropped.') }),
-        HE.el('p', { class: 'assets-ask__hint',
-          text: HE.t('crop.remoteHint', 'The file lands in this folder and the document links it relatively, which is the same thing the paste dialog offers.') })
-      ]),
-      actions: [
-        { label: HE.t('common.cancel'), onClick: function (close) { close(); } },
-        {
-          label: HE.t('crop.download', 'Download it'), primary: true,
-          onClick: function (close) {
-            close();
-            img.setAttribute('data-he-localize', '0');
-            HE.assets.localizeMarked(HE.doc().documentElement).then(function (count) {
-              if (count) { open(img); }
-            });
-          }
-        }
-      ]
-    });
-  }
 
   /* ---------------------------------------------------------- geometry ---- */
 
@@ -277,18 +176,12 @@
   /* ----------------------------------------------------------- the dialog -- */
 
   function open(img) {
-    if (HE.readOnly) { HE.toast(HE.t('save.readonly'), 'warn'); return; }
-    if (!guard(img)) { return; }
-
-    var src = sourceOf(img);
-    loadBitmap(src).then(function (bitmap) {
-      openWith(img, bitmap, src);
-    }).catch(function (err) {
-      HE.toast(HE.t('crop.loadFailed', 'Could not read the image: ') + err.message, 'error');
+    HE.imagefile.open(img, open).then(function (source) {
+      if (source) { openWith(img, source.bitmap, source.mime); }
     });
   }
 
-  function openWith(img, bitmap, src) {
+  function openWith(img, bitmap, mime) {
     var state = {
       bitmap: bitmap, quarter: 0, fine: 0, flipH: false, flipV: false,
       ratio: null, scale: 1, crop: null
@@ -503,7 +396,7 @@
         { label: HE.t('common.cancel'), onClick: function (close) { close(); } },
         {
           label: HE.t('crop.apply', 'Apply'), primary: true,
-          onClick: function (close) { close(); apply(img, state, src); }
+          onClick: function (close) { close(); apply(img, state, mime); }
         }
       ],
       onClose: endDrag
@@ -514,9 +407,8 @@
 
   /* ------------------------------------------------------------ applying -- */
 
-  function apply(img, state, src) {
+  function apply(img, state, mime) {
     var crop = state.crop;
-    var mime = outputMime(src);
     var canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(crop.w));
     canvas.height = Math.max(1, Math.round(crop.h));
@@ -524,41 +416,7 @@
     // A JPEG has no transparency: what a fine rotation leaves empty in the
     // corners would come out black, so it is filled with white instead.
     paint(canvas.getContext('2d'), state, crop, 1, mime === 'image/jpeg' ? '#ffffff' : null);
-
-    HE.toast(HE.t('image.uploading'), 'info');
-    toBlob(canvas, mime).then(function (blob) {
-      return HE.storeAsset(blob, suggestedName(img, mime));
-    }).then(function (asset) {
-      HE.edit(function () {
-        img.setAttribute('src', asset.name);
-        // A srcset left over from a paste would keep winning over the new src.
-        img.removeAttribute('srcset');
-        img.removeAttribute('sizes');
-        if (img.hasAttribute('width')) { img.setAttribute('width', canvas.width); }
-        if (img.hasAttribute('height')) { img.setAttribute('height', canvas.height); }
-        // An explicit height belonged to the shape the picture no longer has.
-        if (img.style.height && img.style.height !== 'auto') { img.style.height = 'auto'; }
-      });
-      // The handles are drawn from the old box until the new file has been
-      // decoded, so they are placed again once it is on screen.
-      img.addEventListener('load', function () { HE.refreshOverlays(); }, { once: true });
-      HE.select(img);
-      HE.toast(HE.t('image.stored') + asset.name, 'ok');
-    }).catch(function (err) {
-      HE.toast(HE.t('crop.failed', 'Could not write the cropped image: ') + err.message, 'error');
-    });
-  }
-
-  function toBlob(canvas, mime) {
-    return new Promise(function (resolve, reject) {
-      try {
-        canvas.toBlob(function (blob) {
-          if (blob) { resolve(blob); } else { reject(new Error('empty result')); }
-        }, mime, JPEG_QUALITY);
-      } catch (err) {
-        reject(err);
-      }
-    });
+    HE.imagefile.write(img, canvas, mime, 'crop');
   }
 
   /**
@@ -566,18 +424,14 @@
    * click, and the dialog is there for everything else.
    */
   function quickRotate(img, direction) {
-    if (HE.readOnly) { HE.toast(HE.t('save.readonly'), 'warn'); return; }
-    if (!guard(img)) { return; }
-    var src = sourceOf(img);
-    loadBitmap(src).then(function (bitmap) {
+    HE.imagefile.open(img, function (again) { quickRotate(again, direction); }).then(function (source) {
+      if (!source) { return; }
       var state = {
-        bitmap: bitmap, quarter: (direction + 4) % 4, fine: 0,
+        bitmap: source.bitmap, quarter: (direction + 4) % 4, fine: 0,
         flipH: false, flipV: false, ratio: null, scale: 1, crop: null
       };
       state.crop = fullCrop(state, null);
-      apply(img, state, src);
-    }).catch(function (err) {
-      HE.toast(HE.t('crop.loadFailed', 'Could not read the image: ') + err.message, 'error');
+      apply(img, state, source.mime);
     });
   }
 

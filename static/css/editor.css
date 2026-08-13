@@ -1552,6 +1552,129 @@ body.is-resizing { cursor: nwse-resize; user-select: none; }
   line-height: 1.5;
 }
 
+/* -------------------------------------------------------------- annotate -- */
+
+.mark-modal .modal__body { padding: .75rem .75rem .5rem; }
+
+.mark { display: flex; flex-direction: column; gap: .6rem; }
+
+.mark__bar {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  flex-wrap: wrap;
+}
+
+.mark__spacer { flex: 1; }
+
+.mark__style {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+  padding: .45rem .55rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--ink-800);
+}
+
+/* Each tool shows the controls that mean something for it: a blur has no
+   outline to colour, and a line has no inside to fill. */
+.mark__style[data-tool="blur"] .mark__only--shape,
+.mark__style[data-tool="blur"] .mark__only--box,
+.mark__style[data-tool="blur"] .mark__only--line,
+.mark__style[data-tool="rect"] .mark__only--line,
+.mark__style[data-tool="ellipse"] .mark__only--line,
+.mark__style[data-tool="line"] .mark__only--box,
+.mark__style[data-tool="arrow"] .mark__only--box,
+.mark__style[data-tool="rect"] .mark__only--blur,
+.mark__style[data-tool="ellipse"] .mark__only--blur,
+.mark__style[data-tool="line"] .mark__only--blur,
+.mark__style[data-tool="arrow"] .mark__only--blur { display: none; }
+
+.mark__toggle {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  color: var(--text-dim);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.mark__toggle input[type="checkbox"] { accent-color: var(--amber); cursor: pointer; }
+.mark__toggle:hover { color: var(--text); }
+
+.mark__swatches { display: flex; align-items: center; gap: .2rem; }
+
+.mark__swatch {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.mark__swatch:hover { transform: scale(1.12); }
+.mark__swatch.is-active {
+  outline: 2px solid var(--amber);
+  outline-offset: 1px;
+}
+
+.mark__picker {
+  width: 24px;
+  height: 20px;
+  margin-left: .15rem;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--ink-700);
+  cursor: pointer;
+}
+
+.mark__field { display: flex; align-items: center; gap: .4rem; }
+
+.mark__label { color: var(--text-dim); font-size: 12.5px; }
+
+.mark__slider { width: 110px; accent-color: var(--amber); cursor: pointer; }
+.mark__slider:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
+
+.mark__number {
+  min-width: 58px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+
+.mark__stage-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  padding: .6rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background:
+    repeating-conic-gradient(var(--ink-800) 0 25%, var(--ink-700) 0 50%) 0 0 / 22px 22px;
+}
+
+.mark__stage {
+  position: relative;
+  user-select: none;
+  cursor: crosshair;
+  box-shadow: var(--shadow-soft);
+}
+
+.mark__canvas { display: block; }
+
+.mark__foot { display: flex; align-items: baseline; gap: .8rem; }
+
+.mark__count { font-family: var(--mono); font-size: 12px; color: var(--amber); }
+
+.mark__hint {
+  color: var(--text-faint);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 /* ------------------------------------------------- the picture seen large */
 
 /* The viewer covers the whole workbench, and the surface behind the picture

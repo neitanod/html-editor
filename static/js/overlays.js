@@ -263,6 +263,9 @@
     tool(HE.t('crop.title', 'Crop and rotate'), '&#9974;', function () {
       HE.imageedit.open(img);
     });
+    tool(HE.t('mark.title', 'Annotate'), '&#9998;', function () {
+      HE.annotate.open(img);
+    });
     bar.appendChild(HE.el('span', { class: 'floatbar__sep' }));
 
     tool(HE.t('image.alt', 'Alternative text'), 'ALT', function () { promptAlt(img); });
