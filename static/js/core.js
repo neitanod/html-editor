@@ -128,6 +128,9 @@
       'crop.ratio.landscape': 'Landscape 4:3', 'crop.ratio.portrait': 'Portrait 3:4',
       'crop.ratio.wide': 'Widescreen 16:9',
       'crop.hint': 'Drag inside the picture to frame it. The original file is kept: the result is written next to it.',
+      'crop.pasteTitle': 'Frame the pasted picture', 'crop.pasteApply': 'Paste the frame',
+      'crop.pasteWhole': 'Paste it whole',
+      'crop.pasteHint': 'Drag inside the picture to frame it. Only what is framed gets stored next to the document.',
       // -- shared by every tool that rewrites a picture -------------------------
       'image.loadFailed': 'Could not read the image: ',
       'image.writeFailed': 'Could not write the image: ',
@@ -314,6 +317,9 @@
       'crop.ratio.landscape': 'Apaisada 4:3', 'crop.ratio.portrait': 'Vertical 3:4',
       'crop.ratio.wide': 'Panorámica 16:9',
       'crop.hint': 'Arrastrá sobre la imagen para encuadrarla. El archivo original se conserva: el resultado se escribe al lado.',
+      'crop.pasteTitle': 'Encuadrar la imagen pegada', 'crop.pasteApply': 'Pegar el encuadre',
+      'crop.pasteWhole': 'Pegarla entera',
+      'crop.pasteHint': 'Arrastrá sobre la imagen para encuadrarla. Sólo lo encuadrado se guarda junto al documento.',
       // -- compartidas por todo lo que reescribe una imagen ---------------------
       'image.loadFailed': 'No se pudo leer la imagen: ',
       'image.writeFailed': 'No se pudo escribir la imagen: ',

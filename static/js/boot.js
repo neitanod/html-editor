@@ -149,7 +149,7 @@
 
     if (files.length) {
       event.preventDefault();
-      insertImageFiles(files);
+      insertPastedImages(files);
       return;
     }
 
@@ -259,6 +259,34 @@
       return range;
     }
     return null;
+  }
+
+  /**
+   * A pasted picture is nearly always a screenshot with more in it than the
+   * part that matters, so the crop dialog opens on it before anything is
+   * written and only the framed part becomes a file. Dismissing the dialog
+   * still pastes the whole picture: Ctrl+V promised a paste, and the framing is
+   * an offer on top of it.
+   *
+   * The caret is taken now because the dialog moves the focus out of the
+   * document, and by the time it closes there is no selection left to insert
+   * into.
+   */
+  function insertPastedImages(files) {
+    var range = caretRange();
+    if (files.length !== 1 || HE.readOnly || !HE.imageedit || !HE.imageedit.cropPasted) {
+      insertImageFiles(files, range);
+      return;
+    }
+    HE.imageedit.cropPasted(files[0]).then(function (file) {
+      insertImageFiles([file], range);
+    });
+  }
+
+  function caretRange() {
+    var selection = HE.win().getSelection();
+    if (!selection || !selection.rangeCount) { return null; }
+    return selection.getRangeAt(0).cloneRange();
   }
 
   function insertImageFiles(files, range) {

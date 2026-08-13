@@ -70,6 +70,29 @@
     });
   }
 
+  /**
+   * A picture that is not in the folder yet — the one just pasted — read at its
+   * natural size so it can be framed before anything is written. `release`
+   * frees the address the bitmap was read from, once nobody is going to paint
+   * it again.
+   */
+  function read(blob) {
+    var url = URL.createObjectURL(blob);
+    var release = function () { URL.revokeObjectURL(url); };
+    return loadBitmap(url).then(function (bitmap) {
+      return {
+        bitmap: bitmap,
+        // Whatever the clipboard called it, only two formats come back out of
+        // a canvas, and a photograph is the one worth keeping as JPEG.
+        mime: blob.type === 'image/jpeg' ? 'image/jpeg' : 'image/png',
+        release: release
+      };
+    }).catch(function (err) {
+      release();
+      throw err;
+    });
+  }
+
   function toBlob(canvas, mime) {
     return new Promise(function (resolve, reject) {
       try {
@@ -176,6 +199,8 @@
 
   HE.imagefile = {
     open: open,
+    read: read,
+    toBlob: toBlob,
     write: write,
     canEdit: canEdit,
     sourceOf: sourceOf,

@@ -120,6 +120,13 @@ en paz, porque recortar formas convirtiéndolas en píxeles es un downgrade
 disfrazado de edición; y una imagen que todavía vive en otro sitio primero te
 ofrece la descarga que la trae a la carpeta.
 
+**La imagen pegada se encuadra antes de aterrizar.** Una captura casi siempre
+trae más de lo que importa, así que `Ctrl+V` abre ese mismo diálogo sobre lo que
+pegaste, antes de escribir nada: sólo lo que encuadrás termina siendo un archivo
+en la carpeta. *Pegarla entera* —o Escape— la guarda tal cual, porque el pegado
+nunca estuvo en discusión. Si pegás varias imágenes de una, el diálogo no
+aparece y se guardan todas.
+
 **Anotar lo que la imagen tiene que mostrar.** *Anotar* dibuja encima números en
 círculo, recuadros, elipses, líneas y flechas, cada uno con su color de borde,
 su color de fondo, su grosor, sus esquinas redondeadas y su sombra, y difumina

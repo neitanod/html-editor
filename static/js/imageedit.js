@@ -177,11 +177,19 @@
 
   function open(img) {
     HE.imagefile.open(img, open).then(function (source) {
-      if (source) { openWith(img, source.bitmap, source.mime); }
+      if (!source) { return; }
+      openWith(source.bitmap, source.mime, {
+        onApply: function (canvas) { HE.imagefile.write(img, canvas, source.mime, 'crop'); }
+      });
     });
   }
 
-  function openWith(img, bitmap, mime) {
+  /**
+   * The dialog itself, over a bitmap that may not be in the document yet.
+   * `options` = {title, applyLabel, cancelLabel, hint, onApply(canvas),
+   * onCancel()}; what becomes of the canvas is the caller's business.
+   */
+  function openWith(bitmap, mime, options) {
     var state = {
       bitmap: bitmap, quarter: 0, fine: 0, flipH: false, flipV: false,
       ratio: null, scale: 1, crop: null
@@ -384,22 +392,42 @@
       fineRow,
       HE.el('div', { class: 'crop__foot' }, [
         size,
-        HE.el('span', { class: 'crop__hint', text: HE.t('crop.hint', 'Drag inside the picture to frame it. The original file is kept: the result is written next to it.') })
+        HE.el('span', { class: 'crop__hint', text: options.hint ||
+          HE.t('crop.hint', 'Drag inside the picture to frame it. The original file is kept: the result is written next to it.') })
       ])
     ]);
 
+    // Closing the dialog any other way — the ✕, Escape, a click on the
+    // backdrop — means the same as pressing the button that walks away, and
+    // `onClose` runs on the way out of Apply too, so it has to know which one
+    // it was.
+    var settled = false;
+
     var dialog = HE.modal({
-      title: HE.t('crop.title', 'Crop and rotate'),
+      title: options.title || HE.t('crop.title', 'Crop and rotate'),
       body: body,
       width: '720px',
       actions: [
-        { label: HE.t('common.cancel'), onClick: function (close) { close(); } },
         {
-          label: HE.t('crop.apply', 'Apply'), primary: true,
-          onClick: function (close) { close(); apply(img, state, mime); }
+          label: options.cancelLabel || HE.t('common.cancel'),
+          onClick: function (close) { close(); }
+        },
+        {
+          label: options.applyLabel || HE.t('crop.apply', 'Apply'), primary: true,
+          onClick: function (close) {
+            settled = true;
+            close();
+            options.onApply(bake(state, mime));
+          }
         }
       ],
-      onClose: endDrag
+      onClose: function () {
+        endDrag();
+        if (!settled) {
+          settled = true;
+          options.onCancel && options.onCancel();
+        }
+      }
     });
     dialog.card.classList.add('crop-modal');
     draw();
@@ -407,7 +435,8 @@
 
   /* ------------------------------------------------------------ applying -- */
 
-  function apply(img, state, mime) {
+  /** Paints the framed part at full size, ready to become a file. */
+  function bake(state, mime) {
     var crop = state.crop;
     var canvas = document.createElement('canvas');
     canvas.width = Math.max(1, Math.round(crop.w));
@@ -416,7 +445,37 @@
     // A JPEG has no transparency: what a fine rotation leaves empty in the
     // corners would come out black, so it is filled with white instead.
     paint(canvas.getContext('2d'), state, crop, 1, mime === 'image/jpeg' ? '#ffffff' : null);
-    HE.imagefile.write(img, canvas, mime, 'crop');
+    return canvas;
+  }
+
+  /**
+   * Frames a picture the moment it is pasted, before it has a file or a place
+   * in the document. Resolves with what should be stored: the framed part, or
+   * the picture untouched when the dialog is dismissed — the paste itself was
+   * never in question, only how much of it lands.
+   */
+  function cropPasted(file) {
+    return HE.imagefile.read(file).then(function (source) {
+      return new Promise(function (resolve) {
+        openWith(source.bitmap, source.mime, {
+          title: HE.t('crop.pasteTitle', 'Frame the pasted picture'),
+          applyLabel: HE.t('crop.pasteApply', 'Paste the frame'),
+          cancelLabel: HE.t('crop.pasteWhole', 'Paste it whole'),
+          hint: HE.t('crop.pasteHint', 'Drag inside the picture to frame it. Only what is framed gets stored next to the document.'),
+          onApply: function (canvas) {
+            HE.imagefile.toBlob(canvas, source.mime)
+              .then(resolve)
+              .catch(function () { resolve(file); })
+              .then(source.release);
+          },
+          onCancel: function () { source.release(); resolve(file); }
+        });
+      });
+    }).catch(function () {
+      // A picture the browser cannot decode is not a picture the dialog can
+      // frame, and refusing the paste over it would be a poor trade.
+      return file;
+    });
   }
 
   /**
@@ -431,12 +490,13 @@
         flipH: false, flipV: false, ratio: null, scale: 1, crop: null
       };
       state.crop = fullCrop(state, null);
-      apply(img, state, source.mime);
+      HE.imagefile.write(img, bake(state, source.mime), source.mime, 'crop');
     });
   }
 
   HE.imageedit = {
     open: open,
+    cropPasted: cropPasted,
     rotateLeft: function (img) { quickRotate(img, -1); },
     rotateRight: function (img) { quickRotate(img, 1); }
   };

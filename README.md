@@ -114,6 +114,13 @@ shapes into pixels to crop them is a downgrade dressed as an edit; and a picture
 that still lives on another site is offered the download that brings it into the
 folder first.
 
+**A pasted picture is framed before it lands.** A screenshot almost always has
+more in it than the part that matters, so `Ctrl+V` opens that same dialog on
+what you pasted, before anything is written: only what you frame becomes a file
+in the folder. *Paste it whole* — or Escape — stores the picture untouched,
+because the paste itself was never in question. Pasting several images at once
+skips the dialog and stores them all.
+
 **Annotate what the picture is meant to show.** *Annotate* draws numbered discs,
 boxes, ellipses, lines and arrows over it, each with its own outline colour,
 fill colour, thickness, rounded corners and shadow, and blurs the patches that
