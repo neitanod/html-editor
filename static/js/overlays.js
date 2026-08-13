@@ -251,6 +251,20 @@
     });
 
     bar.appendChild(HE.el('span', { class: 'floatbar__sep' }));
+
+    // A quarter turn is the whole job often enough to deserve its own button;
+    // anything else (framing, mirroring, straightening) opens the dialog.
+    tool(HE.t('crop.rotateLeft', 'Rotate left'), '&#8634;', function () {
+      HE.imageedit.rotateLeft(img);
+    });
+    tool(HE.t('crop.rotateRight', 'Rotate right'), '&#8635;', function () {
+      HE.imageedit.rotateRight(img);
+    });
+    tool(HE.t('crop.title', 'Crop and rotate'), '&#9974;', function () {
+      HE.imageedit.open(img);
+    });
+    bar.appendChild(HE.el('span', { class: 'floatbar__sep' }));
+
     tool(HE.t('image.alt', 'Alternative text'), 'ALT', function () { promptAlt(img); });
     tool(HE.t('menu.properties'), '&#9881;', function () {
       if (HE.props) { HE.props.openElement(img); }

@@ -98,6 +98,19 @@ relativa (`<img src="foto.png">`), nunca como un data URL de varios megas.
 Arrastrás los tiradores para redimensionarla: mantiene el aspect ratio salvo que
 tengas *Shift* apretado.
 
+**Recortar, rotar y enderezar.** Seleccionás una imagen y la barra que aparece
+arriba la gira un cuarto de vuelta para cualquier lado; *Recortar y rotar* abre
+un diálogo con un marco que arrastrás sobre la foto, proporciones fijas (1:1,
+4:3, 3:4, 16:9 o la original), espejado horizontal y vertical, y una regla para
+enderezar un horizonte torcido, que encoge el encuadre sola para que no entren
+las esquinas vacías que deja el giro. El resultado se escribe como un archivo
+nuevo al lado del documento y el `<img>` apunta ahí: el HTML queda tan simple
+como estaba —sin envoltorios ni `transform`— y el archivo original se conserva
+en la carpeta, así que Ctrl+Z te devuelve la imagen que tenías. Un SVG se deja
+en paz, porque recortar formas convirtiéndolas en píxeles es un downgrade
+disfrazado de edición; y una imagen que todavía vive en otro sitio primero te
+ofrece la descarga que la trae a la carpeta.
+
 **El contenido pegado de la web puede traerse sus imágenes.** Cuando lo que
 pegás enlaza imágenes alojadas en otro sitio, el editor pregunta si lo querés
 pegar tal cual o bajar esos recursos: se guardan junto al documento y se

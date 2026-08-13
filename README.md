@@ -91,6 +91,19 @@ written next to the document with a unique name and referenced relatively
 (`<img src="photo.png">`) — never as a multi-megabyte data URL. Drag the handles
 to resize it: the aspect ratio is preserved unless you hold *Shift*.
 
+**Crop, rotate and straighten.** Select a picture and the bar above it turns it
+a quarter turn either way; *Crop and rotate* opens a dialog with a frame you
+drag over the photograph, fixed proportions (1:1, 4:3, 3:4, 16:9 or the
+original), horizontal and vertical mirroring, and a slider that straightens a
+crooked horizon, shrinking the frame on its own so the empty corners a turn
+leaves behind stay out of it. The result is written as a new file beside the
+document and the `<img>` points at it: the markup stays as plain as it was — no
+wrapper, no `transform` — and the original file is kept in the folder, so Ctrl+Z
+gives you back the picture you had. An SVG is left alone, because turning
+shapes into pixels to crop them is a downgrade dressed as an edit; and a picture
+that still lives on another site is offered the download that brings it into the
+folder first.
+
 **Content pasted from the web can bring its images along.** When what you paste
 links images hosted on another site, the editor asks whether to paste it as is
 or to download those resources: they are stored next to the document and
