@@ -493,7 +493,7 @@
   HE.select = function (element) {
     if (HE.selected === element) { HE.emit('select', element); return element; }
     if (HE.selected && HE.selected.classList) {
-      HE.selected.classList.remove('he-selected');
+      HE.unmark(HE.selected, 'he-selected');
     }
     HE.selected = element || null;
     if (HE.selected && HE.selected.classList) {
@@ -564,9 +564,114 @@
   HE.history = history;
   var HISTORY_LIMIT = 120;
 
+  /**
+   * Classes the editor paints to show what the mouse and the selection are
+   * doing RIGHT NOW. None of them describes the document, so none of them
+   * belongs in a snapshot or survives a reload.
+   *
+   * he-empty-borders is deliberately absent: a table without borders wears it
+   * to get its guide lines, and that IS a fact about the document.
+   */
+  var INTERACTION_CLASSES = [
+    'he-selected', 'he-hover', 'he-drop', 'he-cell-selected', 'he-col-resize'
+  ];
+
+  /**
+   * Takes one mark off, and the class attribute with it when that mark was
+   * all there was: leaving class="" behind would show up in the source view
+   * and in every history entry as a change the document never made.
+   */
+  function unmark(node, name) {
+    node.classList.remove(name);
+    if (!node.getAttribute('class')) { node.removeAttribute('class'); }
+  }
+
+  HE.unmark = unmark;
+
+  function interactionMarked(root) {
+    var found = INTERACTION_CLASSES.map(function (name) {
+      return { name: name, nodes: HE.$$('.' + name, root) };
+    });
+    // querySelectorAll never returns the root itself, and body carries
+    // he-col-resize while a column border is being dragged.
+    if (root && root.classList) {
+      found.forEach(function (group) {
+        if (root.classList.contains(group.name)) { group.nodes.push(root); }
+      });
+    }
+    return found;
+  }
+
+  /** Takes the interaction marks off, hands back what to put back. */
+  function liftInteractionMarks(root) {
+    var lifted = interactionMarked(root);
+    lifted.forEach(function (group) {
+      group.nodes.forEach(function (node) { unmark(node, group.name); });
+    });
+    return lifted;
+  }
+
+  function dropInteractionMarks(lifted) {
+    lifted.forEach(function (group) {
+      group.nodes.forEach(function (node) { node.classList.add(group.name); });
+    });
+  }
+
+  /**
+   * Clears every interaction mark from the live document. Used after loading
+   * or restoring, where the incoming HTML may already carry marks pointing at
+   * nodes that no longer exist.
+   */
+  HE.clearInteractionMarks = function () {
+    var d = HE.doc();
+    if (d && d.documentElement) { liftInteractionMarks(d.documentElement); }
+  };
+
+  /**
+   * Takes the highlight off everything the editor is not actually pointing at,
+   * and leaves the real selection and hover alone.
+   *
+   * Copying an element inside the document copies its highlight with it — the
+   * class is in the HTML, so the clipboard carries it — and the pasted copy
+   * arrives already lit up, on a node HE.selected will never point at. Pasting
+   * and dropping are the two ways foreign HTML lands in a document without the
+   * frame being rebuilt, which is what makes this the place to sweep.
+   *
+   * Cell selection is left to the tables module, which owns the list of cells
+   * and prunes it on every mutation.
+   */
+  HE.sweepStaleMarks = function () {
+    var d = HE.doc();
+    if (!d || !d.documentElement) { return; }
+    if (HE.selected && !HE.selected.isConnected) { HE.select(null); }
+    if (HE.hovered && !HE.hovered.isConnected) { HE.hovered = null; }
+    HE.$$('.he-selected', d.documentElement).forEach(function (node) {
+      if (node !== HE.selected) { unmark(node, 'he-selected'); }
+    });
+    HE.$$('.he-hover', d.documentElement).forEach(function (node) {
+      if (node !== HE.hovered) { unmark(node, 'he-hover'); }
+    });
+    HE.$$('.he-drop', d.documentElement).forEach(function (node) {
+      unmark(node, 'he-drop');
+    });
+  };
+
+  /**
+   * The history entry is the live innerHTML, so the highlight sitting on the
+   * selected element would travel into the stack and come back on an undo —
+   * glued to a fresh node that HE.selected does not point at, and that nothing
+   * would ever unglue it from. Reading with the marks lifted keeps the stack
+   * about the document and only the document.
+   */
   HE.snapshot = function () {
     var d = HE.doc();
-    return d && d.documentElement ? d.documentElement.innerHTML : '';
+    if (!d || !d.documentElement) { return ''; }
+    var lifted = liftInteractionMarks(d.documentElement);
+    try {
+      return d.documentElement.innerHTML;
+    } finally {
+      dropInteractionMarks(lifted);
+    }
   };
 
   HE.pushHistory = function () {
@@ -952,6 +1057,20 @@
       style.setAttribute('data-html-editor-ui', '1');
       style.textContent = RUNTIME_CSS;
       (d.head || d.documentElement).appendChild(style);
+    }
+
+    // A document arriving from anywhere — disk, an undo, the source editor —
+    // may bring interaction marks already written into its HTML. They would
+    // sit there lit up forever, because the state that owns them was reset
+    // with the frame.
+    HE.clearInteractionMarks();
+    if (HE.hovered && !HE.hovered.isConnected) { HE.hovered = null; }
+    if (HE.selected && HE.selected.isConnected && HE.selected.classList) {
+      HE.selected.classList.add('he-selected');
+    } else if (HE.selected) {
+      // The selection went with the old tree; saying so out loud is what
+      // clears the breadcrumb and the properties panel too.
+      HE.select(null);
     }
 
     if (!HE.readOnly) {

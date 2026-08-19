@@ -78,8 +78,7 @@
     cell.removeAttribute('colspan');
     cell.removeAttribute('rowspan');
     cell.removeAttribute('id');
-    if (cell.classList) { cell.classList.remove('he-cell-selected'); }
-    if (!cell.getAttribute('class')) { cell.removeAttribute('class'); }
+    if (cell.classList) { HE.unmark(cell, 'he-cell-selected'); }
     cell.innerHTML = '<br>';
     return cell;
   }
@@ -221,8 +220,7 @@
 
   function clearCellSelection() {
     cellSelection.forEach(function (cell) {
-      if (cell.classList) { cell.classList.remove('he-cell-selected'); }
-      if (!cell.getAttribute('class')) { cell.removeAttribute('class'); }
+      if (cell.classList) { HE.unmark(cell, 'he-cell-selected'); }
     });
     cellSelection = [];
   }
@@ -252,8 +250,7 @@
     var live = selectedCells();
     Array.prototype.slice.call(d.querySelectorAll('.he-cell-selected')).forEach(function (cell) {
       if (live.indexOf(cell) !== -1) { return; }
-      cell.classList.remove('he-cell-selected');
-      if (!cell.getAttribute('class')) { cell.removeAttribute('class'); }
+      HE.unmark(cell, 'he-cell-selected');
     });
   }
 
@@ -1436,6 +1433,12 @@
   HE.on('frame-prepared', function () {
     injectUiStyle();
     bindDoc();
+    // The frame is prepared after the document was replaced wholesale (load,
+    // undo, source apply) and core has just swept the interaction marks off
+    // it. The cells this array remembers went with the old tree, so keeping
+    // it would leave a selection the document no longer shows.
+    clearCellSelection();
+    selectionAnchor = null;
   });
 
   HE.on('select', scheduleToolbarUpdate);

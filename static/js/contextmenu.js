@@ -46,7 +46,8 @@
         action: function () {
           HE.edit(function () {
             var copy = element.cloneNode(true);
-            copy.classList.remove('he-selected', 'he-hover');
+            HE.unmark(copy, 'he-selected');
+            HE.unmark(copy, 'he-hover');
             element.parentNode.insertBefore(copy, element.nextSibling);
             HE.select(copy);
           });

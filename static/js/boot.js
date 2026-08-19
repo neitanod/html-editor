@@ -52,7 +52,7 @@
     d.addEventListener('mouseover', function (event) {
       var target = event.target;
       if (!target || target.nodeType !== 1) { return; }
-      if (HE.hovered && HE.hovered !== target) { HE.hovered.classList.remove('he-hover'); }
+      if (HE.hovered && HE.hovered !== target) { HE.unmark(HE.hovered, 'he-hover'); }
       if (target !== d.body && target !== d.documentElement) {
         target.classList.add('he-hover');
         HE.hovered = target;
@@ -60,7 +60,7 @@
     });
 
     d.addEventListener('mouseout', function () {
-      if (HE.hovered) { HE.hovered.classList.remove('he-hover'); HE.hovered = null; }
+      if (HE.hovered) { HE.unmark(HE.hovered, 'he-hover'); HE.hovered = null; }
     });
 
     // Following a link inside the editor would unload the document, so links
@@ -95,6 +95,13 @@
     d.addEventListener('keydown', deleteSelectedObject);
     d.addEventListener('paste', handlePaste, true);
     d.addEventListener('drop', handleDrop, true);
+
+    // The browser does the plain paste and the plain drop itself, after these
+    // handlers have run, so the sweep waits its turn: content copied from the
+    // document arrives wearing the highlight the original had when it was
+    // copied, and nothing else would ever take it off.
+    d.addEventListener('paste', sweepAfterInsert);
+    d.addEventListener('drop', sweepAfterInsert);
     d.addEventListener('dragover', function (event) {
       if (event.dataTransfer && event.dataTransfer.types &&
           Array.prototype.indexOf.call(event.dataTransfer.types, 'Files') !== -1) {
@@ -134,6 +141,10 @@
   }
 
   /* ---------------------------------------------------------- clipboard -- */
+
+  function sweepAfterInsert() {
+    setTimeout(function () { HE.sweepStaleMarks(); }, 0);
+  }
 
   function handlePaste(event) {
     var data = event.clipboardData;
