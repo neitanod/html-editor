@@ -152,6 +152,9 @@
     HE.setLang(HE.lang === 'es' ? 'en' : 'es');
     paintLang();
   });
+  // The language survives in localStorage, so a reload can start out in Spanish
+  // — and the labels written into the HTML are English until someone says so.
+  HE.applyI18n(document);
   paintLang();
 
   /* ------------------------------------------------------ image insertion */

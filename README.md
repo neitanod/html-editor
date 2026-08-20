@@ -207,6 +207,24 @@ takes it off and gives the content back to the document.
 rows and columns, merge and split cells, toggle the header row, resize columns
 by dragging and move between cells with Tab.
 
+**Printing, and the PDF that comes out of it.** Open the document in a tab and
+press print, and the browser hands the page over to whatever `@page` rule the
+file happens to carry: paper and orientation come out greyed, and the PDF
+arrives sideways. The *Print* button (`Ctrl+P`) opens a panel that decides
+those things here — paper and orientation, margins by preset or in millimetres
+per side, a scale in percent or a shrink-until-it-fits, background colours and
+images, tables and pictures kept whole, table headers repeated on every sheet —
+next to a preview at the real proportions of the sheet, with an amber line
+drawn where each page ends. What goes to the printer is a clean copy of the
+document, without the editor's marks and with its scripts still parked, so it
+carries whatever you changed since the last save too; the @page rules the
+document brought are dropped on the way, which is what gives the browser dialog
+its options back and lets *Save as PDF* produce the page you asked for. *Save
+in the document* writes the setup into the file, in a tag with a fixed id —
+`html-editor-print-setup` — so the document prints the same way outside the
+editor. *Insert a page break* (also in the right-click menu) starts a new sheet
+before the block the cursor is in.
+
 **Bilingual interface.** English and Spanish, switchable from the top right.
 
 ### Keyboard
@@ -217,6 +235,7 @@ by dragging and move between cells with Tab.
 | `Ctrl+Z` / `Ctrl+Y` | Undo / redo |
 | `Ctrl+B` `Ctrl+I` `Ctrl+U` | Bold, italic, underline |
 | `Ctrl+K` | Insert or edit a link |
+| `Ctrl+P` | Print: paper, margins, scale and PDF |
 | `Ctrl+Shift+E` | Toggle the source view |
 | `Ctrl+Shift+V` | Paste as plain text |
 | `Ctrl+Enter` | Apply the source view to the document |

@@ -380,6 +380,7 @@
       return;
     }
     if (key === 'k') { event.preventDefault(); HE.openLinkDialog && HE.openLinkDialog(); return; }
+    if (key === 'p') { event.preventDefault(); HE.print && HE.print.open(); return; }
     if (key === 'e' && event.shiftKey) { event.preventDefault(); HE.source.toggle(); return; }
     if (key === 'enter' && !fromFrame) { return; }
     if (key === 'v' && event.shiftKey && fromFrame) {

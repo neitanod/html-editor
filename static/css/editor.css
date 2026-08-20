@@ -1856,3 +1856,118 @@ body.is-resizing { cursor: nwse-resize; user-select: none; }
 .lightbox__nav:disabled { opacity: .22; cursor: default; }
 .lightbox__nav--prev { left: 14px; }
 .lightbox__nav--next { right: 14px; }
+
+/* ------------------------------------------------------------------ print */
+
+/*
+ * The frame the print job is rendered into. It has to be laid out at the real
+ * page size — a one-pixel box would print a one-pixel column — so it is parked
+ * off to the side instead of hidden.
+ */
+.print-frame {
+  position: fixed;
+  left: -20000px;
+  top: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.print-modal { width: min(980px, calc(100vw - 2rem)); }
+
+.print {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.1rem;
+  align-items: start;
+}
+
+.print__form { min-width: 0; }
+.print .field[hidden] { display: none; }
+.print__side { min-width: 0; position: sticky; top: 0; }
+
+.print__orient { display: flex; gap: .35rem; }
+.print__orient .btn { flex: 1 1 0; justify-content: center; }
+.print__orient .btn.is-active {
+  color: var(--amber);
+  border-color: var(--amber-line);
+  background: var(--amber-soft);
+}
+
+.print__sides {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .4rem;
+  margin-top: .55rem;
+}
+
+.print__toggles { display: flex; flex-direction: column; gap: .35rem; }
+
+.print-check {
+  display: flex;
+  align-items: flex-start;
+  gap: .45rem;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  cursor: pointer;
+  line-height: 1.35;
+}
+.print-check:hover { color: var(--text); }
+.print-check input { margin-top: .15rem; accent-color: var(--amber); }
+
+/* the sheet, drawn at the paper's real proportions and then scaled down */
+
+.print-preview {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--ink-900);
+  padding: 12px;
+  max-height: 58vh;
+  overflow: auto;
+  /* the sheet is measured before it is tall enough to need a scrollbar, so the
+     room for one is kept from the start and the width stays right */
+  scrollbar-gutter: stable;
+}
+
+.print-preview__fit { overflow: hidden; position: relative; }
+
+.print-preview__stage { transform-origin: top left; }
+
+.print-preview__sheet {
+  position: relative;
+  background: #fff;
+  box-shadow: var(--shadow-soft);
+}
+
+.print-preview__frame {
+  display: block;
+  border: 0;
+  background: #fff;
+}
+
+/* one line where each sheet ends, so a bad break is visible before printing */
+.print-preview__cuts {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.print-preview__cut {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 1px solid rgba(240, 166, 55, .9);
+}
+
+.print-preview__summary {
+  margin: .5rem 0 0;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+@media (max-width: 860px) {
+  .print { grid-template-columns: minmax(0, 1fr); }
+  .print__side { position: static; }
+}

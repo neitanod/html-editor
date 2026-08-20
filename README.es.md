@@ -219,6 +219,25 @@ previsualiza al pasar el mouse, y después podés agregar y borrar filas y
 columnas, unir y dividir celdas, activar la fila de encabezado, redimensionar
 columnas arrastrando y moverte entre celdas con Tab.
 
+**Imprimir, y el PDF que sale de ahí.** Al abrir el documento en una pestaña y
+mandarlo a imprimir, el navegador le entrega la página a la regla `@page` que
+traiga el archivo: el papel y la orientación quedan en gris, y el PDF sale
+acostado. El botón *Imprimir* (`Ctrl+P`) abre un panel que decide esas cosas
+acá — papel y orientación, márgenes por preajuste o en milímetros lado por
+lado, escala en porcentaje o achicar hasta que entre, colores e imágenes de
+fondo, tablas e imágenes enteras, encabezados de tabla repetidos en cada hoja —
+al lado de una previsualización con las proporciones reales de la hoja, con una
+línea ámbar dibujada donde termina cada página. A la impresora va una copia
+limpia del documento, sin las marcas del editor y con sus scripts apagados, así
+que también lleva lo que cambiaste desde el último guardado; las reglas @page
+que traía el documento se descartan en el camino, y eso es lo que devuelve las
+opciones del diálogo del navegador y deja que *Guardar como PDF* produzca la
+página que pediste. *Guardar en el documento* escribe los ajustes en el archivo,
+en una etiqueta con un id fijo — `html-editor-print-setup` — para que el
+documento imprima igual fuera del editor. *Insertar un salto de página* (también
+en el menú del botón derecho) arranca una hoja nueva antes del bloque donde está
+el cursor.
+
 **Interfaz bilingüe.** Castellano e inglés, se cambia desde arriba a la derecha.
 
 ### Teclado
@@ -229,6 +248,7 @@ columnas arrastrando y moverte entre celdas con Tab.
 | `Ctrl+Z` / `Ctrl+Y` | Deshacer / rehacer |
 | `Ctrl+B` `Ctrl+I` `Ctrl+U` | Negrita, cursiva, subrayado |
 | `Ctrl+K` | Insertar o editar un enlace |
+| `Ctrl+P` | Imprimir: papel, márgenes, escala y PDF |
 | `Ctrl+Shift+E` | Mostrar u ocultar el código |
 | `Ctrl+Shift+V` | Pegar como texto plano |
 | `Ctrl+Enter` | Aplicar el código al documento |
